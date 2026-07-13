@@ -60,6 +60,10 @@ class NormalizationService:
                 updates["info_hash"] = result.info_hash
         elif parsed_magnet is not None:
             updates["info_hash"] = parsed_magnet.info_hash
+        if magnet:
+            updates["download_capability"] = "magnet"
+        elif updates.get("info_hash"):
+            updates["download_capability"] = "info_hash"
 
         inferred_size = _infer_size(result.raw_data)
         if result.size_bytes is not None:

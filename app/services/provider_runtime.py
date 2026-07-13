@@ -29,9 +29,10 @@ class AsyncTTLCache:
                 return None
             return deepcopy(value)
 
-    async def set(self, key: str, value: Any) -> None:
+    async def set(self, key: str, value: Any, *, ttl_seconds: float | None = None) -> None:
         async with self._lock:
-            self._items[key] = (time.monotonic() + self.ttl_seconds, deepcopy(value))
+            ttl = self.ttl_seconds if ttl_seconds is None else max(0, ttl_seconds)
+            self._items[key] = (time.monotonic() + ttl, deepcopy(value))
             while len(self._items) > self.max_items:
                 self._items.pop(next(iter(self._items)))
 

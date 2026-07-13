@@ -48,6 +48,19 @@ class ProviderRequestMetrics(BaseModel):
     indexers_used: list[str] = Field(default_factory=list)
 
 
+class StremioProviderStatus(BaseModel):
+    """Safe status projection for a configured Stremio addon."""
+
+    enabled: bool
+    available: bool
+    addon_name: str | None = None
+    addon_version: str | None = None
+    supports_movie: bool = False
+    supports_series: bool = False
+    latency_ms: float | None = None
+    error: str | None = None
+
+
 class ProviderSearchError(BaseModel):
     """Structured warning for a provider search that did not complete."""
 

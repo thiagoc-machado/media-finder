@@ -3,6 +3,7 @@
 <div class="download-control" data-download-control
      data-media-type="{{ download_media_type or '' }}"
      data-category="{{ download_category or '' }}"
+     data-download-capability="{{ view.result.download_capability }}"
      data-has-valid-magnet="{{ 'true' if (view.result.magnet_url or view.result.info_hash) else 'false' }}">
   <form class="download-form" hx-post="/downloads" hx-target="#download-feedback-{{ view.result_token }}" hx-swap="innerHTML">
     <input type="hidden" name="result_token" value="{{ view.result_token }}">

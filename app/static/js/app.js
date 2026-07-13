@@ -208,7 +208,14 @@
       controls.forEach(function (control) {
         var mediaType = control.getAttribute("data-media-type");
         var category = control.getAttribute("data-category");
-        if (control.getAttribute("data-has-valid-magnet") !== "true") {
+        var capability = control.getAttribute("data-download-capability");
+        if (capability === "http_stream") {
+          setDownloadReason(control, "Streaming source, not downloadable by qBittorrent", false);
+        } else if (capability === "external") {
+          setDownloadReason(control, "External source", false);
+        } else if (capability === "unsupported") {
+          setDownloadReason(control, "Unsupported stream type", false);
+        } else if (control.getAttribute("data-has-valid-magnet") !== "true") {
           setDownloadReason(control, "Invalid magnet", false);
         } else if (!category || mediaType === "anime" || mediaType === "other") {
           setDownloadReason(control, "Category not configured", false);

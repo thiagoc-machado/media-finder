@@ -109,6 +109,7 @@ def _default_form_state(provider_slugs: list[str]) -> dict:
     return {
         "query": "",
         "media_type": "all",
+        "imdb_id": "",
         "providers": provider_slugs,
         "prowlarr_indexers": ["all"],
         "jackett_indexers": ["all"],
@@ -135,6 +136,7 @@ def form_state_from_params(params) -> dict:
     return {
         "query": params.query,
         "media_type": params.media_type,
+        "imdb_id": params.imdb_id or "",
         "providers": params.providers,
         "prowlarr_indexers": params.prowlarr_indexers,
         "jackett_indexers": params.jackett_indexers,

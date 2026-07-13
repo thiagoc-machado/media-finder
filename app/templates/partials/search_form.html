@@ -24,6 +24,7 @@
   </div>
 
   <div class="search-secondary-row">
+    <label class="compact-field imdb-field">IMDb ID <input type="text" name="imdb_id" value="{{ form_state.imdb_id }}" placeholder="tt1234567" pattern="tt[0-9]{7,10}" maxlength="12" inputmode="text" autocomplete="off"></label>
     <div class="season-fields{% if form_state.media_type not in ['series', 'anime'] %} is-hidden{% endif %}" data-season-fields>
       <label>Temporada <input type="number" name="season" value="{{ form_state.season }}" min="1" max="1000" inputmode="numeric"></label>
       <label>Episódio <input type="number" name="episode" value="{{ form_state.episode }}" min="1" max="1000" inputmode="numeric"></label>

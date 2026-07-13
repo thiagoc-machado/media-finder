@@ -43,6 +43,7 @@ class SearchResult(BaseModel):
     source_type: str | None = None
     release_group: str | None = None
     score: float = 0
+    download_capability: Literal["magnet", "info_hash", "http_stream", "external", "unsupported"] = "unsupported"
     published_at: datetime | None = None
     raw_data: dict[str, Any] = Field(default_factory=dict)
     providers: list[str] = Field(default_factory=list)

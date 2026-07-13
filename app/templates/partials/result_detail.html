@@ -13,6 +13,7 @@
     <div><dt>Seeds / Leechers</dt><dd>{{ result.seeders if result.seeders is not none else '—' }} / {{ result.leechers if result.leechers is not none else '—' }}</dd></div>
     <div><dt>Trackers</dt><dd>{{ result.trackers|join(', ') if result.trackers else 'Unknown' }}</dd></div>
     <div><dt>Publicado</dt><dd>{{ result.published_at|display_datetime }}</dd></div>
+    <div><dt>Capability</dt><dd><span class="capability-badge capability-{{ result.download_capability }}">{{ result.download_capability }}</span></dd></div>
   </dl>
   <div class="magnet-preview"><span>Magnet</span><code>{{ result.magnet_url|mask_magnet }}</code><span class="muted">Magnet is kept server-side.</span><button class="button button-small button-disabled" type="button" disabled>Copy magnet</button></div>
   {% set view = {"result": result, "result_token": result_token} %}

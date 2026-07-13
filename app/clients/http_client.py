@@ -77,6 +77,17 @@ class ProviderHTTPClient:
         except (DefusedXmlException, ElementTree.ParseError, ValueError, UnicodeDecodeError) as exc:
             raise ProviderInvalidResponseError("Provider returned invalid XML") from exc
 
+    async def get_response(
+        self,
+        path: str,
+        *,
+        params: Mapping[str, Any] | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> httpx.Response:
+        """Return a bounded response, including redirects for a caller to inspect."""
+
+        return await self._get(path, params=params, headers=headers, reject_redirect=False)
+
     async def close(self) -> None:
         """Close only clients owned by this transport."""
 
@@ -89,6 +100,7 @@ class ProviderHTTPClient:
         *,
         params: Mapping[str, Any] | None,
         headers: Mapping[str, str] | None,
+        reject_redirect: bool = True,
     ) -> httpx.Response:
         if not path.startswith("/") or "//" in path[1:] or any(ord(char) < 32 for char in path):
             raise ProviderConnectionError("Provider request path is invalid")
@@ -100,7 +112,7 @@ class ProviderHTTPClient:
         except httpx.RequestError as exc:
             raise ProviderConnectionError("Provider connection failed") from exc
 
-        if response.is_redirect:
+        if reject_redirect and response.is_redirect:
             raise ProviderConnectionError("Provider redirect was not allowed")
         if response.status_code in {401, 403}:
             raise ProviderAuthenticationError("Provider authentication failed")

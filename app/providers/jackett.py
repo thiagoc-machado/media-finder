@@ -408,4 +408,5 @@ def _normalize_jackett_item(element: Any, indexer: str, request: SearchRequest) 
             "download_volume_factor": clean_text(attrs.get("downloadvolumefactor"), max_length=20),
             "upload_volume_factor": clean_text(attrs.get("uploadvolumefactor"), max_length=20),
         },
+        download_capability="magnet" if magnet else "info_hash" if info_hash else "unsupported",
     )

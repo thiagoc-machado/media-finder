@@ -138,4 +138,5 @@ class MockProvider:
             audio_codec="AAC",
             source_type="WEB-DL",
             raw_data=raw_data,
+            download_capability="magnet",
         )

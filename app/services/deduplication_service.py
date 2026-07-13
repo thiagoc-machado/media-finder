@@ -116,6 +116,7 @@ def _merge_into(target: SearchResult, incoming: SearchResult, deduplication_type
             setattr(target, field, deepcopy(getattr(incoming, field)))
     target.languages = _unique([*target.languages, *incoming.languages])
     target.magnet_url = _choose_magnet(target.magnet_url, incoming.magnet_url)
+    target.download_capability = _stronger_capability(target.download_capability, incoming.download_capability)
     target_hash = _result_hash(target)
     incoming_hash = _result_hash(incoming)
     if target_hash:
@@ -172,6 +173,13 @@ def _max_known(first: int | None, second: int | None) -> int | None:
     if second is None:
         return first
     return max(first, second)
+
+
+def _stronger_capability(first: str, second: str) -> str:
+    """Keep the most actionable download capability when hashes are merged."""
+
+    order = {"unsupported": 0, "external": 1, "http_stream": 2, "info_hash": 3, "magnet": 4}
+    return first if order.get(first, 0) >= order.get(second, 0) else second
 
 
 def _unique(values: Iterable[str]) -> list[str]:

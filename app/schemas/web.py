@@ -1,11 +1,14 @@
 """Validated query models used by the server-rendered search interface."""
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.schemas.search import SearchFilters, SearchRequest, SearchSort
 from app.utils.size import parse_size
+
+_IMDB_RE = re.compile(r"^tt\d{7,10}$", re.IGNORECASE)
 
 
 class SearchQueryParams(BaseModel):
@@ -15,6 +18,7 @@ class SearchQueryParams(BaseModel):
 
     query: str = Field(min_length=2, max_length=200)
     media_type: Literal["movie", "series", "anime", "other", "all"] = "all"
+    imdb_id: str | None = None
     providers: list[str] = Field(default_factory=list, max_length=10)
     prowlarr_indexers: list[str] = Field(default_factory=list, max_length=50)
     jackett_indexers: list[str] = Field(default_factory=list, max_length=50)
@@ -44,6 +48,20 @@ class SearchQueryParams(BaseModel):
         if len(cleaned) < 2:
             raise ValueError("A busca deve ter pelo menos 2 caracteres.")
         return cleaned
+
+    @field_validator("imdb_id", mode="before")
+    @classmethod
+    def validate_imdb_id(cls, value: object) -> str | None:
+        """Accept only an IMDb title identifier; never perform title lookup."""
+
+        if value is None or value == "":
+            return None
+        if not isinstance(value, str):
+            raise ValueError("IMDb ID inválido.")
+        normalized = value.strip()
+        if not _IMDB_RE.fullmatch(normalized):
+            raise ValueError("Use um IMDb ID no formato tt1234567.")
+        return normalized.lower()
 
     @field_validator(
         "providers",
@@ -128,6 +146,7 @@ class SearchQueryParams(BaseModel):
         return SearchRequest(
             query=self.query,
             media_type=self.media_type,
+            imdb_id=self.imdb_id,
             season=self.season,
             episode=self.episode,
             provider_indexers={

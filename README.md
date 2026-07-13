@@ -1,6 +1,6 @@
 # Media Finder
 
-Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário, comparar resultados e enviar torrents ao qBittorrent. Esta entrega implementa as **Fases 1 a 6**: fundação, contrato de providers, processamento de domínio, interface de busca, integração real com qBittorrent e providers Prowlarr/Jackett.
+Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário, comparar resultados e enviar torrents ao qBittorrent. Esta entrega implementa as **Fases 1 a 7**: fundação, contrato de providers, processamento de domínio, interface de busca, integração real com qBittorrent, providers Prowlarr/Jackett e addons Stremio Torrentio/MediaFusion.
 
 ## O que está pronto
 
@@ -28,15 +28,17 @@ Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário,
 - Tokens aleatórios temporários em memória, TTL, limite de armazenamento e rate limit por IP.
 - Integração real com qBittorrent usando `qbittorrent-api`, autenticação reutilizável, timeouts e chamadas fora do event loop.
 - Integrações reais opcionais com Prowlarr e Jackett, usando APIs oficiais, indexadores selecionáveis, cache curto, rate limit, timeouts e normalização comum.
+- Integrações opcionais com addons Stremio Torrentio e MediaFusion por manifest e stream resources, com cliente genérico, limites de resposta, redirects revalidados, proteção SSRF, cache, concorrência e status seguro.
+- Resultados Stremio normalizados para o contrato comum; magnet/hash podem ir para qBittorrent, enquanto streaming HTTP, fontes externas e streams não acionáveis ficam identificados sem download.
 - Categorias configuráveis somente para `movie → movies` e `series → series`; `anime` e `other` permanecem desabilitados.
 - POST `/downloads` protegido por CSRF e baseado exclusivamente em token temporário server-side.
 - Histórico paginado de downloads, refresh de status e endpoints de health/categorias do qBittorrent.
 - Testes unitários e HTTP para registry, schemas, mock, pipeline, templates, segurança e histórico.
 - Testes e configuração do Ruff.
 
-Sonarr, Radarr, Torrentio, MediaFusion, Comet, AIOStreams e scraping HTML continuam fora do escopo.
+Sonarr, Radarr, Comet, AIOStreams e scraping HTML continuam fora do escopo. A Fase 7 não adiciona Debrid, bibliotecas Jellyfin, automação Sonarr/Radarr, scraping HTML ou novos containers.
 
-## Arquitetura das Fases 1 a 6
+## Arquitetura das Fases 1 a 7
 
 ```text
 Browser
@@ -44,7 +46,7 @@ Browser
    ▼
 FastAPI ── Jinja2 + HTMX local + CSS/JS local
    │
-   ├── ProviderRegistry ── SearchProvider Protocol ── MockProvider / Prowlarr / Jackett
+   ├── ProviderRegistry ── SearchProvider Protocol ── MockProvider / Prowlarr / Jackett / Torrentio / MediaFusion
    │                                      │
    │                                      └── SearchService (asyncio.gather + timeouts)
    │                                                     │
@@ -165,6 +167,39 @@ processed = await process_search_results(
 - Deduplicação fraca é conservadora e pode ser desabilitada com `allow_weak_dedup=False` no pipeline. Conflitos de tamanho ficam em `deduplication_warnings`.
 - O scoring não assume idioma preferido, limita a contribuição de seeders por `seeders_cap`, aplica penalidades configuráveis e explica cada componente em `score_breakdown`.
 - A Fase 3 não adiciona persistência nem migration.
+
+## Providers Stremio: Torrentio e MediaFusion
+
+Os providers Stremio são opcionais e ficam desabilitados por padrão. Cada addon é configurado por sua própria `MANIFEST_URL`; não há instância pública, URL, token ou chave hardcoded. O valor deve ser a URL absoluta do `manifest.json`, sem query, fragmento ou credenciais. O caminho configurado é preservado ao construir `/stream/movie/...` ou `/stream/series/...`.
+
+Variáveis principais:
+
+| Variável | Padrão | Uso |
+| --- | --- | --- |
+| `TORRENTIO_ENABLED` | `false` | Habilita o adapter Torrentio |
+| `TORRENTIO_MANIFEST_URL` | vazio | Manifest configurado pelo usuário |
+| `TORRENTIO_TIMEOUT_SECONDS` | `20` | Timeout HTTP |
+| `TORRENTIO_CACHE_TTL_SECONDS` | `120` | TTL local de manifest/streams |
+| `TORRENTIO_MAX_RESULTS` | `200` | Limite de resultados |
+| `TORRENTIO_MAX_CONCURRENCY` | `2` | Concorrência por addon |
+| `MEDIAFUSION_ENABLED` | `false` | Habilita o adapter MediaFusion |
+| `MEDIAFUSION_MANIFEST_URL` | vazio | Manifest configurado pelo usuário |
+| `MEDIAFUSION_TIMEOUT_SECONDS` | `20` | Timeout HTTP |
+| `MEDIAFUSION_CACHE_TTL_SECONDS` | `120` | TTL local de manifest/streams |
+| `MEDIAFUSION_MAX_RESULTS` | `200` | Limite de resultados |
+| `MEDIAFUSION_MAX_CONCURRENCY` | `2` | Concorrência por addon |
+| `STREMIO_ADDON_MAX_RESPONSE_BYTES` | `5242880` | Tamanho máximo de resposta |
+| `STREMIO_ADDON_MAX_REDIRECTS` | `2` | Redirects permitidos e revalidados |
+| `STREMIO_ADDON_ALLOWED_SCHEMES` | `http,https` | Schemes aceitos |
+| `STREMIO_ADDON_ALLOW_PRIVATE_HOSTS` | `false` | Exceção explícita para hosts privados |
+
+A busca desses addons exige um IMDb ID resolvido no formato `tt` seguido de 7 a 10 dígitos. Não existe lookup TMDB, busca textual ou tentativa de adivinhar o ID. Filmes usam `/stream/movie/tt1234567.json`; séries usam `/stream/series/tt1234567:1:2.json`. MediaFusion aceita somente filme e série e ignora entradas live/HLS.
+
+O cliente aceita resources e aliases comuns do protocolo Stremio, mas consome somente manifest e stream resources. `sources` do tipo `tracker:http(s)/udp` entram no magnet; `dht:` é ignorado. O campo `url` não é baixado nem seguido: URL HTTP vira `http_stream`, `externalUrl`/`ytId` vira `external` e respostas sem ação ficam `unsupported`. A UI mostra essa capability e só habilita qBittorrent para `magnet` ou `info_hash`.
+
+As rotas de observabilidade são `GET /providers/torrentio/status`, `GET /providers/mediafusion/status` e o agregado `GET /providers/health`. Status nunca retorna a URL do manifest. A proteção SSRF bloqueia hosts privados, loopback, link-local, metadados, redirects para outro host e componentes de URL inseguros, salvo quando a exceção é habilitada explicitamente.
+
+Quando Torrentio/MediaFusion e Prowlarr/Jackett retornam o mesmo hash, a deduplicação mantém todos os providers, trackers únicos, o maior número conhecido de seeders e a capability mais forte, nesta ordem: `magnet`, `info_hash`, `http_stream`, `external`, `unsupported`.
 
 ## Interface de busca
 
@@ -334,7 +369,7 @@ pytest
 - A integração é somente com qBittorrent; Sonarr e Radarr ainda não foram implementados.
 - Não há automação de importação nem integrações Sonarr/Radarr/Jellyfin.
 - Não há pause/resume/delete de torrents, alteração de categoria ou remoção de arquivos.
-- Não há integração Arr, Torrentio ou MediaFusion.
+- Torrentio e MediaFusion estão limitados ao contrato Stremio descrito acima; continuam fora do escopo Debrid, Arr, Jellyfin, scraping e automação de biblioteca.
 
 ## Uso autorizado
 

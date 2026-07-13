@@ -114,6 +114,8 @@
 .button-small { font-size: 10px; min-height: 29px; padding: 6px 9px; }
 .button-disabled { cursor: not-allowed; opacity: 0.45; }
 .download-control { align-items: center; display: inline-flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.capability-badge { color: var(--faint); font-family: "DM Mono", monospace; font-size: 8px; letter-spacing: .04em; text-transform: uppercase; }
+.capability-magnet, .capability-info_hash { color: var(--lime); }
 .result-actions .download-control { display: inline-flex; margin-top: 0; }
 .download-form { display: inline-flex; margin: 0; }
 .download-reason { color: var(--faint); font-family: "DM Mono", monospace; font-size: 8px; text-transform: uppercase; }

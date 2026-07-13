@@ -334,4 +334,5 @@ def _normalize_prowlarr_result(payload: dict[str, Any], request: SearchRequest) 
             "has_magnet": magnet is not None,
             "has_source_url": source_url is not None,
         },
+        download_capability="magnet" if magnet else "info_hash" if info_hash else "unsupported",
     )

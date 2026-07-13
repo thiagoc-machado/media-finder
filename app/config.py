@@ -103,6 +103,25 @@ class Settings(BaseSettings):
     jackett_max_concurrency: int = Field(default=3, ge=1, le=32)
     jackett_indexers: str = "all"
 
+    torrentio_enabled: bool = False
+    torrentio_manifest_url: str = ""
+    torrentio_timeout_seconds: float = Field(default=20, ge=1, le=120)
+    torrentio_cache_ttl_seconds: int = Field(default=120, ge=0, le=86_400)
+    torrentio_max_results: int = Field(default=200, ge=1, le=1000)
+    torrentio_max_concurrency: int = Field(default=2, ge=1, le=32)
+
+    mediafusion_enabled: bool = False
+    mediafusion_manifest_url: str = ""
+    mediafusion_timeout_seconds: float = Field(default=20, ge=1, le=120)
+    mediafusion_cache_ttl_seconds: int = Field(default=120, ge=0, le=86_400)
+    mediafusion_max_results: int = Field(default=200, ge=1, le=1000)
+    mediafusion_max_concurrency: int = Field(default=2, ge=1, le=32)
+
+    stremio_addon_max_response_bytes: int = Field(default=5_242_880, ge=1024, le=50_000_000)
+    stremio_addon_max_redirects: int = Field(default=2, ge=0, le=5)
+    stremio_addon_allowed_schemes: str = "http,https"
+    stremio_addon_allow_private_hosts: bool = False
+
     torrent_indexer_url: str = "http://torrent-indexer:7006"
 
     @field_validator(
@@ -132,6 +151,41 @@ class Settings(BaseSettings):
         if parsed.username or parsed.password or parsed.fragment or parsed.query:
             raise ValueError("Provider URL cannot contain credentials, query parameters or fragments")
         return normalized
+
+    @field_validator("torrentio_manifest_url", "mediafusion_manifest_url", mode="before")
+    @classmethod
+    def validate_stremio_manifest_url(cls, value: str) -> str:
+        """Accept an optional absolute manifest URL without rewriting its path."""
+
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return ""
+        if not isinstance(value, str) or any(ord(character) < 32 or ord(character) == 127 for character in value):
+            raise ValueError("Stremio manifest URL is invalid")
+        normalized = value.strip()
+        try:
+            parsed = urlsplit(normalized)
+            parsed.port
+        except ValueError as exc:
+            raise ValueError("Stremio manifest URL is invalid") from exc
+        if parsed.scheme.casefold() not in {"http", "https"} or not parsed.hostname:
+            raise ValueError("Stremio manifest URL must use http or https")
+        if parsed.username or parsed.password or parsed.fragment or parsed.query:
+            raise ValueError("Stremio manifest URL cannot contain credentials, query parameters or fragments")
+        if not parsed.path.endswith("/manifest.json"):
+            raise ValueError("Stremio manifest URL must end with /manifest.json")
+        return normalized
+
+    @field_validator("stremio_addon_allowed_schemes", mode="before")
+    @classmethod
+    def validate_stremio_schemes(cls, value: str) -> str:
+        """Restrict addon URL schemes to the explicitly supported protocols."""
+
+        if not isinstance(value, str):
+            raise ValueError("Stremio addon schemes must be text")
+        schemes = [item.strip().casefold() for item in value.split(",") if item.strip()]
+        if not schemes or any(item not in {"http", "https"} for item in schemes):
+            raise ValueError("Stremio addon schemes must contain only http and https")
+        return ",".join(dict.fromkeys(schemes))
 
     @field_validator("jackett_indexers", mode="before")
     @classmethod
