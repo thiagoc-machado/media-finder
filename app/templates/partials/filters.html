@@ -1,0 +1,38 @@
+<div class="filter-grid">
+  <fieldset class="filter-group">
+    <legend>Idioma</legend>
+    {% for option in language_options %}
+      <label class="filter-option"><input data-clearable-filter type="checkbox" name="languages" value="{{ option }}"{% if option in form_state.languages %} checked{% endif %}><span>{{ option }}</span></label>
+    {% endfor %}
+  </fieldset>
+  <fieldset class="filter-group">
+    <legend>Qualidade</legend>
+    {% for option in quality_options %}
+      <label class="filter-option"><input data-clearable-filter type="checkbox" name="qualities" value="{{ option }}"{% if option in form_state.qualities %} checked{% endif %}><span>{{ option }}</span></label>
+    {% endfor %}
+  </fieldset>
+  <fieldset class="filter-group">
+    <legend>Codec</legend>
+    {% for option in codec_options %}
+      <label class="filter-option"><input data-clearable-filter type="checkbox" name="codecs" value="{{ option }}"{% if option in form_state.codecs %} checked{% endif %}><span>{{ option }}</span></label>
+    {% endfor %}
+  </fieldset>
+  <fieldset class="filter-group">
+    <legend>Source type</legend>
+    {% for option in source_options %}
+      <label class="filter-option"><input data-clearable-filter type="checkbox" name="source_types" value="{{ option }}"{% if option in form_state.source_types %} checked{% endif %}><span>{{ option }}</span></label>
+    {% endfor %}
+  </fieldset>
+  <fieldset class="filter-group filter-group-wide">
+    <legend>Disponibilidade e tamanho</legend>
+    <label class="compact-field">Seeds mín. <input data-clearable-filter type="number" name="min_seeders" value="{{ form_state.min_seeders }}" min="0" max="10000000" placeholder="—"></label>
+    <label class="compact-field">Tamanho mín. <input data-clearable-filter type="text" name="min_size" value="{{ form_state.min_size }}" placeholder="700 MB"></label>
+    <label class="compact-field">Tamanho máx. <input data-clearable-filter type="text" name="max_size" value="{{ form_state.max_size }}" placeholder="20 GB"></label>
+    <label class="compact-field">Tracker <input data-clearable-filter type="text" name="trackers" value="{{ form_state.trackers|join(', ') }}" placeholder="tracker.example"></label>
+  </fieldset>
+  <fieldset class="filter-group filter-group-wide terms-group">
+    <legend>Termos (separados por vírgula)</legend>
+    <label class="compact-field">Obrigatórios <input data-clearable-filter type="text" name="required_terms" value="{{ form_state.required_terms }}" placeholder="extended, remux"></label>
+    <label class="compact-field">Excluídos <input data-clearable-filter type="text" name="excluded_terms" value="{{ form_state.excluded_terms }}" placeholder="cam, sample"></label>
+  </fieldset>
+</div>

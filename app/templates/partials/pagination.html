@@ -1,0 +1,7 @@
+{% if history_total_pages is defined and history_total_pages > 1 %}
+  <nav class="pagination" aria-label="Paginação">
+    {% if history_page > 1 %}<a href="{{ url_for('search_history') }}?page={{ history_page - 1 }}">← Anterior</a>{% endif %}
+    <span>Página {{ history_page }} de {{ history_total_pages }}</span>
+    {% if history_page < history_total_pages %}<a href="{{ url_for('search_history') }}?page={{ history_page + 1 }}">Próxima →</a>{% endif %}
+  </nav>
+{% endif %}

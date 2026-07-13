@@ -1,0 +1,16 @@
+<tr>
+  <td class="result-title-cell"><strong title="{{ view.result.title }}">{{ view.result.title }}</strong>{% if view.result.release_group %}<small>{{ view.result.release_group }}</small>{% endif %}</td>
+  <td>{{ (view.result.providers or [view.result.provider])|join(', ') }}</td>
+  <td>{{ view.result.quality or '—' }}</td>
+  <td>{{ view.result.languages|join(', ') if view.result.languages else '—' }}</td>
+  <td>{{ view.result.codec or '—' }}</td>
+  <td>{{ view.result.source_type or '—' }}</td>
+  <td>{{ view.result.size_bytes|filesize }}</td>
+  <td class="seed-count">{{ view.result.seeders if view.result.seeders is not none else '—' }}</td>
+  <td>{{ view.result.tracker or 'Unknown' }}</td>
+  <td><span class="score-value">{{ "%.1f"|format(view.result.score) }}</span><details class="score-details"><summary>?</summary><ul>{% for line in view.result.score_breakdown %}<li>{{ line }}</li>{% else %}<li>Sem componentes adicionais.</li>{% endfor %}</ul></details></td>
+  <td class="result-actions">
+    <a class="button button-small" href="{{ url_for('search_result_detail', result_token=view.result_token) }}" hx-get="{{ url_for('search_result_detail', result_token=view.result_token) }}" hx-target="#result-detail" hx-swap="innerHTML">Details</a>
+    {% include "partials/download_action.html" %}
+  </td>
+</tr>

@@ -1,0 +1,49 @@
+{% if search_error is defined and search_error %}
+  <div class="search-error-panel" role="alert"><strong>Não foi possível pesquisar.</strong><span>{{ search_error }}</span></div>
+{% elif processed is not defined or processed is none %}
+  <div class="empty-state"><div class="empty-icon" aria-hidden="true">⌕</div><h2>Pronto para pesquisar</h2><p>Digite um título e escolha suas fontes para começar.</p></div>
+{% else %}
+  <section class="results-shell" aria-labelledby="results-heading">
+    <header class="results-header">
+      <div>
+        <p class="section-kicker">Resultados</p>
+        <h2 id="results-heading">{{ search_query }}</h2>
+        <p class="results-summary">{{ processed.results|length }} resultados · {{ providers_requested|length }} fontes · {{ processed.duration_ms|round(0)|int }} ms</p>
+      </div>
+      <div class="results-metrics" aria-label="Métricas da busca">
+        <span>Brutos: <strong>{{ processed.raw_count }}</strong></span>
+        <span>Normalizados: <strong>{{ processed.normalized_count }}</strong></span>
+        <span>Deduplicados: <strong>{{ processed.deduplicated_count }}</strong></span>
+        <span>Filtrados: <strong>{{ processed.filtered_count }}</strong></span>
+      </div>
+    </header>
+
+    <div class="provider-summary" aria-label="Status dos providers">
+      <span>{{ providers_succeeded|length }} providers concluíram</span>
+      {% if processed.provider_errors %}<span class="provider-warning">{{ processed.provider_errors|length }} provider(s) falharam</span>{% endif %}
+      {% if providers_requested %}<span class="muted">Consultados: {{ providers_requested|join(', ') }}</span>{% endif %}
+    </div>
+
+    {% if processed.provider_errors %}
+      <aside class="warning-panel" role="status">
+        <strong>Algumas fontes não responderam</strong>
+        <ul>{% for error in processed.provider_errors %}<li>{{ error.provider }}: {{ error.message }}</li>{% endfor %}</ul>
+      </aside>
+    {% endif %}
+
+    {% if result_views %}
+      <div class="desktop-results">
+        <div class="results-table-wrap">
+          <table class="results-table">
+            <thead><tr><th>Título</th><th>Provider(s)</th><th>Qualidade</th><th>Idioma</th><th>Codec</th><th>Fonte</th><th>Tamanho</th><th>Seeds</th><th>Tracker</th><th>Score</th><th>Ações</th></tr></thead>
+            <tbody>{% for view in result_views %}{% include "partials/result_row.html" %}{% endfor %}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="mobile-results">{% for view in result_views %}{% include "partials/result_card.html" %}{% endfor %}</div>
+      <div id="result-detail" class="result-detail-target" aria-live="polite"></div>
+    {% else %}
+      <div class="empty-state results-empty-state"><div class="empty-icon" aria-hidden="true">∅</div><h2>No results matched the current search and filters.</h2><p>Try removing language, size, or seed restrictions.</p></div>
+    {% endif %}
+  </section>
+{% endif %}

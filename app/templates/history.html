@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Histórico · {{ app_name }}{% endblock %}
+{% block content %}
+  <section class="page-heading"><p class="eyebrow"><span class="eyebrow-line"></span>Activity</p><h1>Histórico de buscas</h1><p>Consultas recentes e seus metadados operacionais. Tokens e payloads de providers não são persistidos.</p></section>
+  {% if history %}
+    <div class="history-table-wrap"><table class="history-table"><thead><tr><th>Query</th><th>Tipo</th><th>Providers</th><th>Resultados</th><th>Duração</th><th>Data</th><th>Ação</th></tr></thead><tbody>{% for item in history %}<tr><td><strong>{{ item.query }}</strong></td><td>{{ item.media_type }}</td><td>{{ item.providers|join(', ') if item.providers else '—' }}</td><td>{{ item.results_count }}</td><td>{{ item.duration_ms }} ms</td><td>{{ item.created_at|display_datetime }}</td><td><a class="button button-small" href="{{ item.search_url }}">Repetir</a></td></tr>{% endfor %}</tbody></table></div>
+    <div class="mobile-history">{% for item in history %}<article class="history-card"><h2>{{ item.query }}</h2><p>{{ item.media_type }} · {{ item.results_count }} resultados · {{ item.duration_ms }} ms</p><p class="muted">{{ item.providers|join(', ') if item.providers else 'Nenhum provider registrado' }} · {{ item.created_at|display_datetime }}</p><a class="button button-small" href="{{ item.search_url }}">Repetir busca</a></article>{% endfor %}</div>
+    {% if history_total_pages > 1 %}<nav class="pagination" aria-label="Paginação do histórico">{% if history_page > 1 %}<a href="{{ url_for('search_history') }}?page={{ history_page - 1 }}">← Anterior</a>{% endif %}<span>Página {{ history_page }} de {{ history_total_pages }}</span>{% if history_page < history_total_pages %}<a href="{{ url_for('search_history') }}?page={{ history_page + 1 }}">Próxima →</a>{% endif %}</nav>{% endif %}
+  {% else %}<div class="empty-state"><div class="empty-icon" aria-hidden="true">◷</div><h2>Nenhuma busca registrada.</h2><p>As próximas buscas aparecerão aqui.</p><a class="button button-primary" href="{{ url_for('home') }}">Nova busca</a></div>{% endif %}
+{% endblock %}

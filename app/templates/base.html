@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Media Finder — pesquisa centralizada de mídia autorizada.">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+    <script src="{{ url_for('static', path='vendor/htmx.min.js') }}" defer></script>
+    <script src="{{ url_for('static', path='js/app.js') }}" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="{{ url_for('home') }}" aria-label="Ir para o início">
+          <span class="brand-mark" aria-hidden="true">⌁</span>
+          <span>{{ app_name }}</span>
+        </a>
+
+        <button class="nav-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" data-nav-toggle>
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="main-nav" aria-label="Navegação principal" data-main-nav>
+          <a href="{{ url_for('home') }}" data-nav-link="home"><span class="nav-icon">⌕</span>Busca</a>
+          <a href="{{ url_for('search_history') }}" data-nav-link="history"><span class="nav-icon">◷</span>Histórico</a>
+          <a href="{{ url_for('downloads') }}" data-nav-link="downloads"><span class="nav-icon">↓</span>Downloads</a>
+          <a href="{{ url_for('providers') }}" data-nav-link="providers"><span class="nav-icon">◈</span>Fontes</a>
+          <a href="{{ url_for('settings') }}" data-nav-link="settings"><span class="nav-icon">⚙</span>Configurações</a>
+        </nav>
+
+        <div class="env-badge" title="Ambiente atual">
+          <span class="status-dot"></span>
+          <span>{{ app_env }}</span>
+        </div>
+      </header>
+
+      <main class="page-content">
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="site-footer">
+        <span>{{ app_name }} <span class="muted">v{{ version }}</span></span>
+        <span class="footer-note">Conteúdo e fontes configurados pelo usuário</span>
+      </footer>
+    </div>
+  </body>
+</html>

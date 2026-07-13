@@ -1,0 +1,73 @@
+<form id="search-form" class="search-form search-form-full" action="/search" method="get"
+      hx-get="/search" hx-target="#search-results" hx-indicator="#search-loading" hx-push-url="true"
+      hx-disabled-elt="button[type='submit']">
+  <div class="search-main-row">
+    <label class="search-input-wrap search-input-large">
+      <span class="sr-only">Título, série ou palavra-chave</span>
+      <span class="search-symbol" aria-hidden="true">⌕</span>
+      <input type="search" name="query" value="{{ form_state.query }}" placeholder="Título, série ou palavra-chave"
+             minlength="2" maxlength="200" autocomplete="off" required>
+    </label>
+    <label class="select-wrap">
+      <span class="sr-only">Tipo de mídia</span>
+      <select name="media_type" data-media-type>
+        <option value="all"{% if form_state.media_type == 'all' %} selected{% endif %}>Todos os tipos</option>
+        <option value="movie"{% if form_state.media_type == 'movie' %} selected{% endif %}>Filmes</option>
+        <option value="series"{% if form_state.media_type == 'series' %} selected{% endif %}>Séries</option>
+        <option value="anime"{% if form_state.media_type == 'anime' %} selected{% endif %}>Anime</option>
+        <option value="other"{% if form_state.media_type == 'other' %} selected{% endif %}>Outro</option>
+      </select>
+    </label>
+    <button class="button button-primary search-submit" type="submit" data-search-submit>
+      Buscar <span aria-hidden="true">→</span>
+    </button>
+  </div>
+
+  <div class="search-secondary-row">
+    <div class="season-fields{% if form_state.media_type not in ['series', 'anime'] %} is-hidden{% endif %}" data-season-fields>
+      <label>Temporada <input type="number" name="season" value="{{ form_state.season }}" min="1" max="1000" inputmode="numeric"></label>
+      <label>Episódio <input type="number" name="episode" value="{{ form_state.episode }}" min="1" max="1000" inputmode="numeric"></label>
+    </div>
+    <span id="search-loading" class="search-loading htmx-indicator" role="status">
+      <span class="spinner" aria-hidden="true"></span> Searching providers…
+    </span>
+  </div>
+
+  <section class="provider-section" aria-labelledby="providers-heading">
+    <div class="subsection-heading">
+      <div><p class="section-kicker">Fontes</p><h3 id="providers-heading">Onde pesquisar</h3></div>
+      <div class="inline-actions">
+        <button type="button" class="text-button" data-select-all-providers>Selecionar todos</button>
+        <button type="button" class="text-button" data-clear-providers>Limpar fontes</button>
+      </div>
+    </div>
+    <div class="provider-check-grid">
+      {% for provider in providers %}
+        <label class="provider-check">
+          <input type="checkbox" name="providers" value="{{ provider.slug }}"{% if provider.slug in form_state.providers %} checked{% endif %}>
+          <span class="checkmark" aria-hidden="true">✓</span>
+          <span><strong>{{ provider.name }}</strong><small>{{ provider.slug }}</small></span>
+        </label>
+      {% else %}
+        <p class="muted">Nenhum provider habilitado.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <details class="filters-panel" open>
+    <summary><span><span class="section-kicker">Filtros</span><strong>Ajuste os resultados</strong></span><span class="summary-chevron">⌄</span></summary>
+    {% include "partials/filters.html" %}
+  </details>
+
+  <div class="form-footer-row">
+    <label class="sort-control">Ordenar por
+      <select name="sort_by">
+        {% for value, label in sort_options %}
+          <option value="{{ value }}"{% if form_state.sort_by == value %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="toggle-control"><input type="checkbox" name="weak_deduplication" value="true"{% if form_state.weak_deduplication %} checked{% endif %}><span class="toggle-track" aria-hidden="true"></span> Deduplicação fraca</label>
+    <button type="button" class="text-button clear-filter-button" data-clear-filters>Limpar filtros</button>
+  </div>
+</form>

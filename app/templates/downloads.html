@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Downloads · {{ app_name }}{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <p class="eyebrow"><span class="eyebrow-line"></span>Activity</p>
+    <h1>Downloads</h1>
+    <p>Histórico dos envios realizados pelo Media Finder ao qBittorrent.</p>
+  </section>
+  {% if downloads %}
+    <section class="results-shell download-history-shell" aria-labelledby="downloads-heading">
+      <header class="results-header"><div><p class="section-kicker">qBittorrent</p><h2 id="downloads-heading">Download history</h2></div><span class="muted">Atualização manual de status</span></header>
+      <div class="results-table-wrap">
+        <table class="results-table downloads-table">
+          <thead><tr><th>Title</th><th>Type</th><th>Provider</th><th>Quality</th><th>Language</th><th>Category</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+          <tbody>{% for download in downloads %}{% include "partials/download_row.html" %}{% endfor %}</tbody>
+        </table>
+      </div>
+    </section>
+  {% else %}
+    <section class="empty-state">
+      <div class="empty-icon">↓</div>
+      <h2>Nenhum download ainda</h2>
+      <p>Envie um resultado elegível da busca para vê-lo aqui.</p>
+      <a class="button button-secondary" href="{{ url_for('home') }}">Voltar para busca <span>→</span></a>
+    </section>
+  {% endif %}
+  {% if downloads_total_pages is defined and downloads_total_pages > 1 %}
+    <nav class="pagination" aria-label="Paginação de downloads">
+      {% if downloads_page > 1 %}<a href="{{ url_for('downloads') }}?page={{ downloads_page - 1 }}">← Anterior</a>{% endif %}
+      <span>Página {{ downloads_page }} de {{ downloads_total_pages }}</span>
+      {% if downloads_page < downloads_total_pages %}<a href="{{ url_for('downloads') }}?page={{ downloads_page + 1 }}">Próxima →</a>{% endif %}
+    </nav>
+  {% endif %}
+{% endblock %}

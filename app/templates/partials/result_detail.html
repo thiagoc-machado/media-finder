@@ -1,0 +1,24 @@
+<article class="detail-panel">
+  <div class="detail-heading"><div><p class="section-kicker">Resultado detalhado</p><h2>{{ result.title }}</h2></div><span class="score-pill">{{ "%.1f"|format(result.score) }}</span></div>
+  <dl class="detail-grid">
+    <div><dt>Provider(s)</dt><dd>{{ (result.providers or [result.provider])|join(', ') }}</dd></div>
+    <div><dt>Hash</dt><dd>{{ result.info_hash|short_hash }}</dd></div>
+    <div><dt>Qualidade</dt><dd>{{ result.quality or 'Unknown' }}</dd></div>
+    <div><dt>Idioma</dt><dd>{{ result.languages|join(', ') if result.languages else 'Unknown' }}</dd></div>
+    <div><dt>Codec</dt><dd>{{ result.codec or 'Unknown' }}</dd></div>
+    <div><dt>Áudio</dt><dd>{{ result.audio_codec or 'Unknown' }}{% if result.audio_channels %} · {{ result.audio_channels }}{% endif %}</dd></div>
+    <div><dt>Source type</dt><dd>{{ result.source_type or 'Unknown' }}</dd></div>
+    <div><dt>Release group</dt><dd>{{ result.release_group or 'Unknown' }}</dd></div>
+    <div><dt>Tamanho</dt><dd>{{ result.size_bytes|filesize }}</dd></div>
+    <div><dt>Seeds / Leechers</dt><dd>{{ result.seeders if result.seeders is not none else '—' }} / {{ result.leechers if result.leechers is not none else '—' }}</dd></div>
+    <div><dt>Trackers</dt><dd>{{ result.trackers|join(', ') if result.trackers else 'Unknown' }}</dd></div>
+    <div><dt>Publicado</dt><dd>{{ result.published_at|display_datetime }}</dd></div>
+  </dl>
+  <div class="magnet-preview"><span>Magnet</span><code>{{ result.magnet_url|mask_magnet }}</code><span class="muted">Magnet is kept server-side.</span><button class="button button-small button-disabled" type="button" disabled>Copy magnet</button></div>
+  {% set view = {"result": result, "result_token": result_token} %}
+  {% include "partials/download_action.html" %}
+  <div class="detail-lower-grid">
+    <details open><summary>Score breakdown</summary><ul>{% for line in result.score_breakdown %}<li>{{ line }}</li>{% else %}<li>Sem componentes adicionais.</li>{% endfor %}</ul></details>
+    <details><summary>Deduplicação {{ result.deduplication_type }}</summary>{% if result.deduplication_warnings %}<ul>{% for warning in result.deduplication_warnings %}<li>{{ warning }}</li>{% endfor %}</ul>{% else %}<p>Sem warnings.</p>{% endif %}</details>
+  </div>
+</article>

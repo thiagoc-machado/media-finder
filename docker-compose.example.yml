@@ -1,0 +1,45 @@
+services:
+  media-finder:
+    build:
+      context: ./media-finder
+      dockerfile: Dockerfile
+    container_name: media-finder
+    environment:
+      APP_ENV: production
+      APP_PORT: '8091'
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?set APP_SECRET_KEY in the environment}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      DATABASE_URL: sqlite:////config/media-finder.db
+
+      QBITTORRENT_URL: http://qbittorrent:8080
+      QBITTORRENT_USERNAME: ${QBITTORRENT_USERNAME}
+      QBITTORRENT_PASSWORD: ${QBITTORRENT_PASSWORD}
+      QBITTORRENT_CATEGORY_MOVIE: ${QBITTORRENT_CATEGORY_MOVIE:-movies}
+      QBITTORRENT_CATEGORY_SERIES: ${QBITTORRENT_CATEGORY_SERIES:-series}
+      QBITTORRENT_CATEGORY_ANIME: ${QBITTORRENT_CATEGORY_ANIME:-}
+      QBITTORRENT_CATEGORY_OTHER: ${QBITTORRENT_CATEGORY_OTHER:-}
+      QBITTORRENT_CONNECT_TIMEOUT_SECONDS: ${QBITTORRENT_CONNECT_TIMEOUT_SECONDS:-5}
+      QBITTORRENT_OPERATION_TIMEOUT_SECONDS: ${QBITTORRENT_OPERATION_TIMEOUT_SECONDS:-15}
+      QBITTORRENT_HEALTH_TIMEOUT_SECONDS: ${QBITTORRENT_HEALTH_TIMEOUT_SECONDS:-5}
+
+      SONARR_URL: http://sonarr:8989
+      SONARR_API_KEY: ${SONARR_API_KEY}
+
+      RADARR_URL: http://radarr:7878
+      RADARR_API_KEY: ${RADARR_API_KEY}
+
+      PROWLARR_URL: http://prowlarr:9696
+      PROWLARR_API_KEY: ${PROWLARR_API_KEY}
+
+      JACKETT_URL: http://jackett:9117
+      JACKETT_API_KEY: ${JACKETT_API_KEY}
+
+      TORRENT_INDEXER_URL: http://torrent-indexer:7006
+    volumes:
+      - /opt/appdata/media-finder:/config
+    ports:
+      - '8091:8091'
+    depends_on:
+      - qbittorrent
+    restart: unless-stopped

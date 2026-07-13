@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Busca · {{ app_name }}{% endblock %}
+
+{% block content %}
+  <section class="hero-grid hero-grid-compact">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="eyebrow-line"></span>Media workspace</p>
+      <h1>Encontre o próximo título da sua <em>biblioteca.</em></h1>
+      <p class="hero-description">Pesquise fontes autorizadas, compare releases e escolha o melhor resultado em um só lugar.</p>
+      <div class="hero-meta">
+        <span class="meta-item"><span class="meta-icon">✦</span> Busca unificada</span>
+        <span class="meta-item"><span class="meta-icon">◌</span> Resultados explicáveis</span>
+      </div>
+    </div>
+    <div class="hero-orbit" aria-hidden="true">
+      <div class="orbit orbit-one"></div>
+      <div class="orbit orbit-two"></div>
+      <div class="orbit-core"><span>MF</span></div>
+      <span class="orbit-label orbit-label-one">SEARCH</span>
+      <span class="orbit-label orbit-label-two">CURATE</span>
+      <span class="orbit-label orbit-label-three">COMPARE</span>
+    </div>
+  </section>
+
+  <section class="search-panel search-panel-functional" aria-labelledby="search-heading">
+    <div class="panel-heading">
+      <div>
+        <p class="section-kicker">Workspace</p>
+        <h2 id="search-heading">Comece uma busca</h2>
+      </div>
+      <span class="phase-chip">Mock provider</span>
+    </div>
+    <div id="search-form-errors" class="form-error{% if not form_error %} is-hidden{% endif %}" role="alert">{{ form_error or "" }}</div>
+    {% include "partials/search_form.html" %}
+  </section>
+
+  <section id="search-results" aria-live="polite" aria-atomic="true">
+    {% if processed is defined %}
+      {% include "partials/results_table.html" %}
+    {% else %}
+      <div class="empty-state search-empty-state">
+        <div class="empty-icon" aria-hidden="true">⌕</div>
+        <h2>Pronto para pesquisar</h2>
+        <p>Escolha suas fontes e filtros. Os resultados aparecerão aqui, sem sair desta página.</p>
+        {% if recent_history %}
+          <a class="text-link" href="{{ url_for('search_history') }}">Ver histórico recente <span>↗</span></a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

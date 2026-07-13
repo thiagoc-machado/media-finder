@@ -1,0 +1,11 @@
+<tr>
+  <td class="result-title-cell"><strong title="{{ download.title }}">{{ download.title }}</strong></td>
+  <td>{{ download.media_type }}</td>
+  <td>{{ download.provider }}</td>
+  <td>{{ download.quality or '—' }}</td>
+  <td>{{ download.language or '—' }}</td>
+  <td>{{ download.category }}</td>
+  <td><div id="download-status-{{ download.id }}">{% include "partials/download_status.html" %}</div></td>
+  <td>{{ download.created_at[:16].replace('T', ' ') if download.created_at else '—' }}</td>
+  <td><a class="button button-small button-secondary" href="{{ url_for('download_status', download_id=download.id) }}" hx-get="{{ url_for('download_status', download_id=download.id) }}" hx-target="#download-status-{{ download.id }}" hx-swap="innerHTML">Refresh status</a></td>
+</tr>

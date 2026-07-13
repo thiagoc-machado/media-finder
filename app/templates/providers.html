@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Fontes · {{ app_name }}{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <p class="eyebrow"><span class="eyebrow-line"></span>Connections</p>
+    <h1>Fontes</h1>
+    <p>Os providers plugáveis serão configurados e monitorados a partir da Fase 2.</p>
+  </section>
+  <section class="provider-preview-grid">
+    <article class="provider-preview"><span class="provider-symbol">◇</span><div><h2>Prowlarr</h2><p>Indexadores centralizados</p></div><span class="coming-soon">Planejado</span></article>
+    <article class="provider-preview"><span class="provider-symbol">◈</span><div><h2>Jackett</h2><p>Integração Torznab</p></div><span class="coming-soon">Planejado</span></article>
+    <article class="provider-preview"><span class="provider-symbol">⌁</span><div><h2>Mock provider</h2><p>Ambiente de desenvolvimento</p></div><span class="coming-soon">Fase 2</span></article>
+  </section>
+{% endblock %}
