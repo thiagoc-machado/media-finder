@@ -1,6 +1,6 @@
 # Media Finder
 
-Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário, comparar resultados e enviar torrents ao qBittorrent. Esta entrega implementa as **Fases 1 a 5**: fundação, contrato de providers, processamento de domínio, interface de busca e integração real com qBittorrent.
+Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário, comparar resultados e enviar torrents ao qBittorrent. Esta entrega implementa as **Fases 1 a 6**: fundação, contrato de providers, processamento de domínio, interface de busca, integração real com qBittorrent e providers Prowlarr/Jackett.
 
 ## O que está pronto
 
@@ -27,15 +27,16 @@ Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário,
 - Histórico SQLite com paginação e somente metadados não sensíveis.
 - Tokens aleatórios temporários em memória, TTL, limite de armazenamento e rate limit por IP.
 - Integração real com qBittorrent usando `qbittorrent-api`, autenticação reutilizável, timeouts e chamadas fora do event loop.
+- Integrações reais opcionais com Prowlarr e Jackett, usando APIs oficiais, indexadores selecionáveis, cache curto, rate limit, timeouts e normalização comum.
 - Categorias configuráveis somente para `movie → movies` e `series → series`; `anime` e `other` permanecem desabilitados.
 - POST `/downloads` protegido por CSRF e baseado exclusivamente em token temporário server-side.
 - Histórico paginado de downloads, refresh de status e endpoints de health/categorias do qBittorrent.
 - Testes unitários e HTTP para registry, schemas, mock, pipeline, templates, segurança e histórico.
 - Testes e configuração do Ruff.
 
-Somente o `MockProvider` é usado nesta fase. Providers reais, Sonarr, Radarr, Prowlarr, Jackett, Torrentio e MediaFusion continuam fora do escopo.
+Sonarr, Radarr, Torrentio, MediaFusion, Comet, AIOStreams e scraping HTML continuam fora do escopo.
 
-## Arquitetura das Fases 1 a 5
+## Arquitetura das Fases 1 a 6
 
 ```text
 Browser
@@ -43,7 +44,7 @@ Browser
    ▼
 FastAPI ── Jinja2 + HTMX local + CSS/JS local
    │
-   ├── ProviderRegistry ── SearchProvider Protocol ── MockProvider
+   ├── ProviderRegistry ── SearchProvider Protocol ── MockProvider / Prowlarr / Jackett
    │                                      │
    │                                      └── SearchService (asyncio.gather + timeouts)
    │                                                     │
@@ -105,7 +106,7 @@ docker compose build media-finder
 docker compose up -d media-finder
 ```
 
-Prowlarr, Jackett, Sonarr, Radarr e o indexador local são configurações futuras e não são dependências de inicialização nesta fase. O qBittorrent indisponível não impede o boot; a aplicação informa a falha apenas nas operações que dependem dele.
+Prowlarr e Jackett são providers opcionais: não são dependências de inicialização e não impedem o boot quando estão fora do ar ou sem chave. O qBittorrent indisponível também não impede o boot.
 
 ## Contrato de providers
 
@@ -129,6 +130,18 @@ O mock pode ser consultado pelo endpoint de health:
 ```bash
 curl http://localhost:8091/providers/health
 ```
+
+## Providers reais: Prowlarr e Jackett
+
+O registro é explícito e respeita `PROWLARR_ENABLED` e `JACKETT_ENABLED`. Chaves vazias deixam o provider indisponível no health, sem falhar o boot. Chaves nunca são incluídas em logs, exceções, templates ou respostas públicas.
+
+O adapter Prowlarr usa a API oficial com `X-Api-Key` e os endpoints `GET /api/v1/system/status`, `GET /api/v1/indexer` e `GET /api/v1/search`. A busca usa `type`, `query`, `indexerIds` e `categories` quando as capabilities permitem; caso contrário, recorre à busca geral. Consulte a [documentação oficial de busca do Prowlarr](https://wiki.servarr.com/en/prowlarr/search).
+
+O adapter Jackett usa exclusivamente o endpoint Torznab documentado `/api/v2.0/indexers/{indexer}/results/torznab/api`: `t=caps` para capabilities e `t=search`, `t=tvsearch` ou `t=movie` para resultados. `JACKETT_INDEXERS=all` consulta o agregador configurado; uma lista separada por vírgulas restringe os indexadores. Consulte o [README oficial do Jackett](https://github.com/Jackett/Jackett).
+
+As rotas auxiliares para a UI são `GET /providers/prowlarr/indexers` e `GET /providers/jackett/indexers`. A busca aceita os campos repetidos `prowlarr_indexers` e `jackett_indexers`. O formulário carrega os indexadores somente quando o provider é selecionado e envia `all` por padrão.
+
+As respostas externas passam por limites de tamanho, validação JSON/XML, normalização de magnet/hash, remoção de parâmetros sensíveis de URLs e cópia defensiva no cache. Resultados parciais de indexadores não derrubam a busca; somente uma falha total é reportada ao `SearchService`.
 
 O processamento de domínio é usado pela rota HTMX de busca:
 
@@ -240,6 +253,9 @@ Principais variáveis:
 | `SEARCH_RATE_LIMIT_REQUESTS` | `20` | Buscas permitidas por janela/IP |
 | `SEARCH_RATE_LIMIT_WINDOW_SECONDS` | `60` | Janela do rate limit |
 | `SEARCH_HISTORY_PAGE_SIZE` | `25` | Registros por página do histórico |
+| `PROVIDER_RATE_LIMIT_REQUESTS` | `20` | Chamadas por provider na janela |
+| `PROVIDER_RATE_LIMIT_WINDOW_SECONDS` | `60` | Janela do rate limit de providers |
+| `PROVIDER_CACHE_MAX_ITEMS` | `512` | Máximo de resultados normalizados em cada cache |
 | `APP_SECRET_KEY` | obrigatório em produção | Chave da sessão/CSRF; gere com `openssl rand -hex 32` |
 | `QBITTORRENT_URL` | `http://qbittorrent:8080` | Endpoint do qBittorrent |
 | `QBITTORRENT_CATEGORY_MOVIE` | `movies` | Categoria usada por filmes |
@@ -251,8 +267,21 @@ Principais variáveis:
 | `QBITTORRENT_HEALTH_TIMEOUT_SECONDS` | `5` | Timeout do health |
 | `SONARR_URL` | `http://sonarr:8989` | Endpoint futuro do Sonarr |
 | `RADARR_URL` | `http://radarr:7878` | Endpoint futuro do Radarr |
-| `PROWLARR_URL` | `http://prowlarr:9696` | Endpoint futuro do Prowlarr |
-| `JACKETT_URL` | `http://jackett:9117` | Endpoint futuro do Jackett |
+| `PROWLARR_ENABLED` | `true` | Registra o Prowlarr no registry |
+| `PROWLARR_URL` | `http://prowlarr:9696` | Endpoint HTTP do Prowlarr |
+| `PROWLARR_API_KEY` | vazio | Chave enviada somente no header `X-Api-Key` |
+| `PROWLARR_TIMEOUT_SECONDS` | `15` | Timeout das chamadas Prowlarr |
+| `PROWLARR_MAX_RESULTS` | `200` | Limite de resultados Prowlarr |
+| `PROWLARR_CACHE_TTL_SECONDS` | `60` | TTL do cache Prowlarr |
+| `PROWLARR_MAX_CONCURRENCY` | `3` | Concorrência máxima Prowlarr |
+| `JACKETT_ENABLED` | `true` | Registra o Jackett no registry |
+| `JACKETT_URL` | `http://jackett:9117` | Endpoint HTTP do Jackett |
+| `JACKETT_API_KEY` | vazio | Chave necessária para Torznab |
+| `JACKETT_TIMEOUT_SECONDS` | `20` | Timeout das chamadas Jackett |
+| `JACKETT_MAX_RESULTS` | `200` | Limite de resultados Jackett |
+| `JACKETT_CACHE_TTL_SECONDS` | `60` | TTL do cache Jackett |
+| `JACKETT_MAX_CONCURRENCY` | `3` | Concorrência máxima Jackett |
+| `JACKETT_INDEXERS` | `all` | Agregador ou lista de indexadores separados por vírgula |
 | `TORRENT_INDEXER_URL` | `http://torrent-indexer:7006` | Endpoint futuro do indexador local |
 
 As API keys e credenciais devem ser fornecidas pelo ambiente, nunca pelo código-fonte.
@@ -301,9 +330,9 @@ pytest
 ## Limitações desta fase
 
 - O armazenamento de tokens e o rate limit são locais ao processo; múltiplas réplicas exigirão uma camada compartilhada futura.
-- Apenas o `MockProvider` está registrado; providers reais ainda não foram implementados.
+- Prowlarr e Jackett dependem de instâncias e indexadores configurados pelo usuário; testes reais são somente de leitura.
 - A integração é somente com qBittorrent; Sonarr e Radarr ainda não foram implementados.
-- Jackett e Prowlarr também não foram implementados nem conectados.
+- Não há automação de importação nem integrações Sonarr/Radarr/Jellyfin.
 - Não há pause/resume/delete de torrents, alteração de categoria ou remoção de arquivos.
 - Não há integração Arr, Torrentio ou MediaFusion.
 

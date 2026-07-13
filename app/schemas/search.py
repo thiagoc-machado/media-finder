@@ -16,6 +16,8 @@ class SearchRequest(BaseModel):
     tmdb_id: int | None = None
     season: int | None = None
     episode: int | None = None
+    indexers: list[str] = Field(default_factory=list)
+    provider_indexers: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class SearchResult(BaseModel):

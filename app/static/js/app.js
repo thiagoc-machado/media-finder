@@ -55,6 +55,99 @@
     });
   }
 
+  function providerIsSelected(slug) {
+    var input = document.querySelector("input[name='providers'][value='" + slug + "']");
+    return Boolean(input && input.checked);
+  }
+
+  function setIndexerMessage(panel, message, error) {
+    var messageNode = panel.querySelector("[data-indexer-loading]");
+    if (!messageNode) return;
+    messageNode.textContent = message;
+    messageNode.classList.toggle("indexer-load-error", Boolean(error));
+  }
+
+  function syncIndexerSelection(panel, changed) {
+    var all = panel.querySelector(".indexer-all-check input");
+    var specific = Array.prototype.slice.call(panel.querySelectorAll(".indexer-item-check input"));
+    if (!all) return;
+    if (changed === all && all.checked) {
+      specific.forEach(function (input) { input.checked = false; });
+    } else if (changed !== all && changed && changed.checked) {
+      all.checked = false;
+    } else if (!specific.some(function (input) { return input.checked; })) {
+      all.checked = true;
+    }
+  }
+
+  function renderIndexerOptions(panel, items) {
+    var container = panel.querySelector("[data-indexer-options]");
+    if (!container) return;
+    var loading = container.querySelector("[data-indexer-loading]");
+    var selected = (panel.getAttribute("data-selected-indexers") || "").split(",").filter(Boolean);
+    container.querySelectorAll(".indexer-item-check").forEach(function (node) { node.remove(); });
+    items.forEach(function (item) {
+      if (!item || typeof item.id !== "string" || typeof item.name !== "string") return;
+      var label = document.createElement("label");
+      label.className = "indexer-check indexer-item-check";
+      var input = document.createElement("input");
+      input.type = "checkbox";
+      input.name = panel.getAttribute("data-provider") + "_indexers";
+      input.value = item.id;
+      input.checked = selected.indexOf(item.id) !== -1;
+      var text = document.createElement("span");
+      text.textContent = item.name;
+      label.appendChild(input);
+      label.appendChild(text);
+      input.addEventListener("change", function () { syncIndexerSelection(panel, input); });
+      container.insertBefore(label, loading || null);
+    });
+    if (loading) {
+      loading.textContent = items.length ? "Atualizado" : "Nenhum indexador disponível";
+      loading.classList.remove("indexer-load-error");
+    }
+    var all = container.querySelector(".indexer-all-check input");
+    if (all && selected.length && selected.indexOf("all") === -1) all.checked = false;
+  }
+
+  function loadIndexerPanel(panel) {
+    if (!providerIsSelected(panel.getAttribute("data-provider"))) {
+      panel.classList.add("is-hidden");
+      panel.querySelectorAll("input").forEach(function (input) { input.disabled = true; });
+      return;
+    }
+    panel.classList.remove("is-hidden");
+    panel.querySelectorAll("input").forEach(function (input) { input.disabled = false; });
+    if (panel.getAttribute("data-loaded") === "true") return;
+    setIndexerMessage(panel, "Carregando indexadores…", false);
+    fetch(panel.getAttribute("data-indexer-url"), { headers: { "Accept": "application/json" } })
+      .then(function (response) {
+        if (!response.ok) throw new Error("indexer request failed");
+        return response.json();
+      })
+      .then(function (items) {
+        renderIndexerOptions(panel, Array.isArray(items) ? items.filter(function (item) { return item.enabled !== false; }) : []);
+        panel.setAttribute("data-loaded", "true");
+      })
+      .catch(function () {
+        setIndexerMessage(panel, "Não foi possível carregar os indexadores", true);
+      });
+  }
+
+  function refreshIndexerPanels() {
+    document.querySelectorAll("[data-indexer-panel]").forEach(loadIndexerPanel);
+  }
+
+  document.querySelectorAll("[data-indexer-panel]").forEach(function (panel) {
+    panel.setAttribute("data-provider", panel.getAttribute("data-indexer-panel"));
+    var all = panel.querySelector(".indexer-all-check input");
+    if (all) all.addEventListener("change", function () { syncIndexerSelection(panel, all); });
+  });
+  document.querySelectorAll("input[name='providers']").forEach(function (input) {
+    input.addEventListener("change", refreshIndexerPanels);
+  });
+  refreshIndexerPanels();
+
   var clearFilters = query("[data-clear-filters]");
   if (clearFilters) {
     clearFilters.addEventListener("click", function () {

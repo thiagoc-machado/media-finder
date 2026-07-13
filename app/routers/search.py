@@ -162,7 +162,16 @@ async def search_result_detail(request: Request, result_token: str):
 def _parse_query_params(request: Request, settings) -> SearchQueryParams:
     """Convert repeated query-string keys into the bounded web schema."""
 
-    list_fields = {"providers", "languages", "qualities", "codecs", "source_types", "trackers"}
+    list_fields = {
+        "providers",
+        "prowlarr_indexers",
+        "jackett_indexers",
+        "languages",
+        "qualities",
+        "codecs",
+        "source_types",
+        "trackers",
+    }
     values: dict[str, object] = {}
     for key in request.query_params.keys():
         if key in list_fields:

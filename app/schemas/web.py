@@ -16,6 +16,8 @@ class SearchQueryParams(BaseModel):
     query: str = Field(min_length=2, max_length=200)
     media_type: Literal["movie", "series", "anime", "other", "all"] = "all"
     providers: list[str] = Field(default_factory=list, max_length=10)
+    prowlarr_indexers: list[str] = Field(default_factory=list, max_length=50)
+    jackett_indexers: list[str] = Field(default_factory=list, max_length=50)
     season: int | None = Field(default=None, ge=1, le=1000)
     episode: int | None = Field(default=None, ge=1, le=1000)
     languages: list[str] = Field(default_factory=list, max_length=20)
@@ -43,7 +45,17 @@ class SearchQueryParams(BaseModel):
             raise ValueError("A busca deve ter pelo menos 2 caracteres.")
         return cleaned
 
-    @field_validator("providers", "languages", "qualities", "codecs", "source_types", "trackers", mode="before")
+    @field_validator(
+        "providers",
+        "prowlarr_indexers",
+        "jackett_indexers",
+        "languages",
+        "qualities",
+        "codecs",
+        "source_types",
+        "trackers",
+        mode="before",
+    )
     @classmethod
     def clean_lists(cls, values: object) -> list[str]:
         """Strip list values, remove duplicates, and reject control characters."""
@@ -118,6 +130,14 @@ class SearchQueryParams(BaseModel):
             media_type=self.media_type,
             season=self.season,
             episode=self.episode,
+            provider_indexers={
+                provider: indexers
+                for provider, indexers in {
+                    "prowlarr": self.prowlarr_indexers,
+                    "jackett": self.jackett_indexers,
+                }.items()
+                if indexers
+            },
         )
 
     def to_filters(self) -> SearchFilters:

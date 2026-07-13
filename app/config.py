@@ -2,6 +2,7 @@
 
 import re
 from functools import lru_cache
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -64,6 +65,9 @@ class Settings(BaseSettings):
     search_rate_limit_requests: int = 20
     search_rate_limit_window_seconds: int = 60
     search_history_page_size: int = 25
+    provider_rate_limit_requests: int = Field(default=20, ge=1, le=1000)
+    provider_rate_limit_window_seconds: int = Field(default=60, ge=1, le=86_400)
+    provider_cache_max_items: int = Field(default=512, ge=1, le=10_000)
 
     qbittorrent_url: str = "http://qbittorrent:8080"
     qbittorrent_username: str = ""
@@ -84,9 +88,20 @@ class Settings(BaseSettings):
 
     prowlarr_url: str = "http://prowlarr:9696"
     prowlarr_api_key: str = ""
+    prowlarr_enabled: bool = True
+    prowlarr_timeout_seconds: float = Field(default=15, ge=1, le=120)
+    prowlarr_max_results: int = Field(default=200, ge=1, le=1000)
+    prowlarr_cache_ttl_seconds: int = Field(default=60, ge=0, le=86_400)
+    prowlarr_max_concurrency: int = Field(default=3, ge=1, le=32)
 
     jackett_url: str = "http://jackett:9117"
     jackett_api_key: str = ""
+    jackett_enabled: bool = True
+    jackett_timeout_seconds: float = Field(default=20, ge=1, le=120)
+    jackett_max_results: int = Field(default=200, ge=1, le=1000)
+    jackett_cache_ttl_seconds: int = Field(default=60, ge=0, le=86_400)
+    jackett_max_concurrency: int = Field(default=3, ge=1, le=32)
+    jackett_indexers: str = "all"
 
     torrent_indexer_url: str = "http://torrent-indexer:7006"
 
@@ -102,6 +117,40 @@ class Settings(BaseSettings):
         """Apply the same safe category rules to environment settings."""
 
         return QBitTorrentCategorySettings.validate_category(value)
+
+    @field_validator("prowlarr_url", "jackett_url", mode="before")
+    @classmethod
+    def validate_provider_url(cls, value: str) -> str:
+        """Accept only absolute HTTP(S) provider URLs without credentials."""
+
+        if not isinstance(value, str) or any(ord(character) < 32 or ord(character) == 127 for character in value):
+            raise ValueError("Provider URL is invalid")
+        normalized = value.strip().rstrip("/")
+        parsed = urlsplit(normalized)
+        if parsed.scheme.casefold() not in {"http", "https"} or not parsed.hostname:
+            raise ValueError("Provider URL must use http or https")
+        if parsed.username or parsed.password or parsed.fragment or parsed.query:
+            raise ValueError("Provider URL cannot contain credentials, query parameters or fragments")
+        return normalized
+
+    @field_validator("jackett_indexers", mode="before")
+    @classmethod
+    def validate_jackett_indexers(cls, value: str) -> str:
+        """Normalize the configured Jackett indexer list without broad input."""
+
+        if value is None:
+            return "all"
+        if not isinstance(value, str):
+            raise ValueError("Jackett indexers must be text")
+        normalized = value.strip()
+        if len(normalized) > 500 or any(ord(character) < 32 or ord(character) == 127 for character in normalized):
+            raise ValueError("Jackett indexers are invalid")
+        if not normalized:
+            return "all"
+        indexers = [item.strip() for item in normalized.split(",")]
+        if any(not re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", item) for item in indexers):
+            raise ValueError("Jackett indexers are invalid")
+        return ",".join(indexers)
 
     @property
     def version(self) -> str:

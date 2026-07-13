@@ -43,3 +43,31 @@ class UnsupportedMediaTypeError(MediaFinderError):
 
 class ExpiredResultTokenError(MediaFinderError):
     """Raised when a temporary search result is no longer available."""
+
+
+class ProviderError(MediaFinderError):
+    """Base class for safe, expected external-provider failures."""
+
+
+class ProviderAuthenticationError(ProviderError):
+    """Raised when a provider rejects its configured API key."""
+
+
+class ProviderConnectionError(ProviderError):
+    """Raised when a provider cannot be reached or redirects unexpectedly."""
+
+
+class ProviderTimeoutError(ProviderError):
+    """Raised when a provider request exceeds its configured timeout."""
+
+
+class ProviderInvalidResponseError(ProviderError):
+    """Raised when a provider returns malformed or oversized data."""
+
+
+class ProviderRateLimitError(ProviderError):
+    """Raised when the local per-provider limiter denies a request."""
+
+
+class ProviderConfigurationError(ProviderError):
+    """Raised when a provider is enabled but cannot be configured safely."""

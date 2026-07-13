@@ -10,8 +10,42 @@ class ProviderHealth(BaseModel):
 
     slug: str
     available: bool
+    version: str | None = None
     latency_ms: float | None = None
     error: str | None = None
+
+
+class ProviderIndexer(BaseModel):
+    """Safe public projection of one configured provider indexer."""
+
+    id: str
+    name: str
+    enabled: bool = True
+    protocol: str | None = None
+    privacy: str | None = None
+    categories: list[int] = Field(default_factory=list)
+    capabilities: list[str] = Field(default_factory=list)
+
+
+class ProviderCapabilities(BaseModel):
+    """Capabilities exposed by a Torznab-compatible provider indexer."""
+
+    search: bool = False
+    movie_search: bool = False
+    tv_search: bool = False
+    music_search: bool = False
+    book_search: bool = False
+    categories: dict[int, str] = Field(default_factory=dict)
+
+
+class ProviderRequestMetrics(BaseModel):
+    """Safe metrics for one provider request."""
+
+    provider: str
+    duration_ms: float
+    result_count: int
+    cached: bool = False
+    indexers_used: list[str] = Field(default_factory=list)
 
 
 class ProviderSearchError(BaseModel):
