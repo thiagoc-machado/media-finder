@@ -61,6 +61,7 @@ async def test_tmdb_candidate_selection_creates_resolved_movie_and_searches(clie
     assert "Interstellar" in selected.text
     assert "tt0816692" in selected.text
     resolved_token = re.search(r'name="resolved_media_token" value="([A-Za-z0-9_-]+)"', selected.text).group(1)
+    assert f'hx-target="#resolved-search-results-{resolved_token}"' in selected.text
 
     releases = await client.get(
         "/search/resolved",
@@ -87,7 +88,8 @@ async def test_series_selection_validates_season_episode_and_searches(client, mo
     episodes = await client.get(f"/metadata/series/{resolved_token}/season/1")
     assert episodes.status_code == 200
     assert "Pilot" in episodes.text
-    assert 'name="episode" value="1"' in episodes.text
+    assert 'data-select-episode data-season="1" data-episode="1"' in episodes.text
+    assert episodes.text.count('class="resolved-release-form"') == 1
 
     releases = await client.get(
         "/search/resolved",

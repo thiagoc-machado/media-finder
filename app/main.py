@@ -11,7 +11,6 @@ from app.clients.tmdb_client import TMDBClient
 from app.config import get_settings
 from app.providers.jackett import JackettProvider
 from app.providers.mediafusion import MediaFusionProvider
-from app.providers.mock import MockProvider
 from app.providers.prowlarr import ProwlarrProvider
 from app.providers.registry import ProviderRegistry
 from app.providers.torrentio import TorrentioProvider
@@ -47,7 +46,6 @@ app.add_middleware(
     https_only=False,
 )
 provider_registry = ProviderRegistry()
-provider_registry.register(MockProvider(), priority=10)
 provider_instances = []
 if settings_config.prowlarr_enabled:
     prowlarr_provider = ProwlarrProvider(settings_config)

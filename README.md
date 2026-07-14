@@ -14,7 +14,7 @@ Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário,
 - Dockerfile baseado em `python:3.12-slim`, identidade `PUID`/`PGID` configurável, execução final não-root, migration automática e healthcheck.
 - Exemplo de serviço para Docker Compose.
 - Contrato assíncrono `SearchProvider`, schemas normalizados e registry explícito.
-- `MockProvider` determinístico com latência, timeout, erro, lista vazia e health configuráveis.
+- Provider mock determinístico disponível somente nas fixtures de teste; o runtime oferece exclusivamente providers reais configurados.
 - `SearchService` com execução concorrente, timeout por provider e erros parciais estruturados.
 - Endpoint JSON `GET /providers/health` para providers habilitados.
 - Contratos `SearchFilters`, `SearchSort`, `ScoringPreferences` e `ProcessedSearchResult`.
@@ -48,7 +48,7 @@ Browser
    ▼
 FastAPI ── Jinja2 + HTMX local + CSS/JS local
    │
-   ├── ProviderRegistry ── SearchProvider Protocol ── MockProvider / Prowlarr / Jackett / Torrentio / MediaFusion
+   ├── ProviderRegistry ── SearchProvider Protocol ── Prowlarr / Jackett / Torrentio / MediaFusion
    │                                      │
    │                                      └── SearchService (asyncio.gather + timeouts)
    │                                                     │
@@ -129,7 +129,7 @@ result = await service.search(SearchRequest(query="Example"), ["my-provider"])
 
 O resultado agregado informa `providers_requested`, `providers_succeeded`, resultados parciais, warnings estruturados e duração total. Uma falha ou timeout cancela somente a tarefa daquele provider.
 
-O mock pode ser consultado pelo endpoint de health:
+O endpoint de health lista somente os providers reais habilitados e configurados:
 
 ```bash
 curl http://localhost:8091/providers/health

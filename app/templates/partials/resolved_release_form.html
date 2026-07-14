@@ -1,4 +1,4 @@
-<form class="resolved-release-form" action="/search/resolved" method="get" hx-get="/search/resolved" hx-target="#search-results" hx-push-url="true">
+<form class="resolved-release-form" action="/search/resolved" method="get" hx-get="/search/resolved" hx-target="#resolved-search-results-{{ resolved_media_token }}" hx-swap="innerHTML">
   <input type="hidden" name="resolved_media_token" value="{{ resolved_media_token }}">
   {% if season is defined and season %}<input type="hidden" name="season" value="{{ season.season_number }}">{% endif %}
   {% if selected_episode is defined %}<input type="hidden" name="episode" value="{{ selected_episode }}">{% endif %}
@@ -11,6 +11,6 @@
   <div class="form-footer-row">
     <label class="sort-control">Ordenar por<select name="sort_by">{% for value, label in sort_options %}<option value="{{ value }}"{% if form_state.sort_by == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
     <label class="toggle-control"><input type="checkbox" name="weak_deduplication" value="true"{% if form_state.weak_deduplication %} checked{% endif %}><span class="toggle-track" aria-hidden="true"></span> Deduplicação fraca</label>
-    <button class="button button-primary" type="submit">Buscar releases <span aria-hidden="true">→</span></button>
+    <button class="button button-primary" type="submit" data-resolved-release-submit{% if season is defined and season and not selected_episode %} disabled{% endif %}>Buscar releases <span aria-hidden="true">→</span></button>
   </div>
 </form>

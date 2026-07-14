@@ -3,11 +3,10 @@
 {% elif processed is not defined or processed is none %}
   <div class="empty-state"><div class="empty-icon" aria-hidden="true">⌕</div><h2>Pronto para pesquisar</h2><p>Digite um título e escolha suas fontes para começar.</p></div>
 {% else %}
-  <section class="results-shell" aria-labelledby="results-heading">
+  <section class="results-shell{% if compact_results %} resolved-results-shell{% endif %}" aria-labelledby="results-heading">
     <header class="results-header">
       <div>
-        <p class="section-kicker">Resultados</p>
-        <h2 id="results-heading">{{ search_query }}</h2>
+        {% if compact_results %}<p id="results-heading" class="section-kicker">Releases encontrados</p>{% else %}<p class="section-kicker">Resultados</p><h2 id="results-heading">{{ search_query }}</h2>{% endif %}
         <p class="results-summary">{{ processed.results|length }} resultados · {{ providers_requested|length }} fontes · {{ processed.duration_ms|round(0)|int }} ms</p>
       </div>
       <div class="results-metrics" aria-label="Métricas da busca">

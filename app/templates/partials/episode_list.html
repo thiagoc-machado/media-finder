@@ -5,10 +5,19 @@
       {% for view in episode_views %}
         <article class="episode-choice">
           <div><strong>{{ view.episode.episode_number }}. {{ view.episode.name or "Sem título" }}</strong>{% if view.episode.air_date %}<span>{{ view.episode.air_date }}</span>{% endif %}{% if view.episode.runtime_minutes %}<span>{{ view.episode.runtime_minutes }} min</span>{% endif %}<p>{{ view.episode.overview or "Sem sinopse disponível." }}</p></div>
-          {% set selected_episode = view.episode.episode_number %}
-          {% include "partials/resolved_release_form.html" %}
+          <button class="button button-small button-secondary episode-select-button" type="button"
+                  data-select-episode data-season="{{ season.season_number }}" data-episode="{{ view.episode.episode_number }}">
+            Selecionar episódio
+          </button>
         </article>
       {% endfor %}
     </div>
   {% else %}<p class="muted">Nenhum episódio encontrado.</p>{% endif %}
+  {% if season.episodes %}
+    <div class="episode-search-controls">
+      <p class="muted" data-episode-selection>Selecione um episódio para configurar a busca.</p>
+      {% set selected_episode = "" %}
+      {% include "partials/resolved_release_form.html" %}
+    </div>
+  {% endif %}
 </section>

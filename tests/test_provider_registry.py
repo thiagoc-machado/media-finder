@@ -2,8 +2,15 @@
 
 import pytest
 
+from app.main import provider_registry as runtime_provider_registry
 from app.providers.mock import MockProvider
 from app.providers.registry import DuplicateProviderError, ProviderNotFoundError, ProviderRegistry
+
+
+def test_runtime_registry_does_not_expose_mock_provider():
+    """The mock is a test fixture only and is never offered by the app runtime."""
+
+    assert all(provider.slug != "mock" for provider in runtime_provider_registry.providers())
 
 
 def test_registry_registers_lists_and_returns_provider_by_slug():

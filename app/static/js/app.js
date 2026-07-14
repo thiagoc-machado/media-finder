@@ -181,6 +181,29 @@
     if (event.target && event.target.matches("[data-filter-preset]")) applyFilterPreset(event.target);
   });
 
+  document.body.addEventListener("click", function (event) {
+    var button = event.target && event.target.closest ? event.target.closest("[data-select-episode]") : null;
+    if (!button) return;
+    var selectedMedia = button.closest(".selected-media");
+    if (!selectedMedia) return;
+    selectedMedia.querySelectorAll("[data-select-episode]").forEach(function (item) {
+      var selected = item === button;
+      item.classList.toggle("is-selected", selected);
+      item.setAttribute("aria-pressed", String(selected));
+    });
+    var form = selectedMedia.querySelector(".episode-search-controls .resolved-release-form");
+    if (!form) return;
+    var season = form.querySelector("input[name='season']");
+    var episode = form.querySelector("input[name='episode']");
+    if (season) season.value = button.getAttribute("data-season") || "";
+    if (episode) episode.value = button.getAttribute("data-episode") || "";
+    var submit = form.querySelector("[data-resolved-release-submit]");
+    if (submit) submit.disabled = false;
+    var note = selectedMedia.querySelector("[data-episode-selection]");
+    if (note) note.textContent = "Episódio S" + (season ? season.value : "") + "E" + (episode ? episode.value : "") + " selecionado.";
+    form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+
   function setSearching(searching) {
     var submit = query("[data-search-submit]");
     var loading = query("#search-loading");

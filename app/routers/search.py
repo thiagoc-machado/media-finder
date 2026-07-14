@@ -154,6 +154,7 @@ async def resolved_search(
         "search_params": form_state_from_params(params),
         "providers_requested": execution.providers_requested,
         "providers_succeeded": execution.providers_succeeded,
+        "compact_results": True,
     }
     if _is_htmx(request):
         return templates.TemplateResponse(
