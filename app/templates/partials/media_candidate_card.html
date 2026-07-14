@@ -19,6 +19,6 @@
     </div>
     <a class="button button-small" href="/metadata/select/{{ view.candidate_token }}"
        hx-get="/metadata/select/{{ view.candidate_token }}"
-       hx-target="#metadata-detail" hx-swap="innerHTML">Selecionar</a>
+       hx-target="closest .media-candidate-card" hx-swap="afterend">Selecionar</a>
   </div>
 </article>

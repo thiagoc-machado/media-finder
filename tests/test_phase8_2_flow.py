@@ -54,6 +54,7 @@ async def test_tmdb_candidate_selection_creates_resolved_movie_and_searches(clie
     assert candidates.status_code == 200
     token = _candidate_tokens(candidates.text)[0]
     assert "tmdb_id" not in candidates.text
+    assert 'hx-target="closest .media-candidate-card" hx-swap="afterend"' in candidates.text
 
     selected = await client.get(f"/metadata/select/{token}")
     assert selected.status_code == 200

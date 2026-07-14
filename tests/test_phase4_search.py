@@ -218,6 +218,11 @@ async def test_provider_title_is_escaped_in_rendered_html(client):
 
 
 async def test_web_schema_bounds_and_conversion():
+    empty_numbers = SearchQueryParams(query="Example", min_seeders="", season="", episode="")
+    assert empty_numbers.min_seeders is None
+    assert empty_numbers.to_filters().min_seeders is None
+    assert SearchQueryParams(query="Example", min_seeders=0).to_filters().min_seeders is None
+
     params = SearchQueryParams(
         query="  Example   Movie ",
         providers=["mock", "mock"],
@@ -240,6 +245,15 @@ async def test_web_schema_bounds_and_conversion():
         SearchQueryParams(query="Example", media_type="movie", season=1)
     with pytest.raises(ValueError):
         SearchQueryParams(query="Example", min_size="2 GB", max_size="1 GB").to_filters()
+
+
+async def test_empty_seed_filter_is_accepted_by_search_endpoint(client):
+    response = await client.get(
+        "/search?query=Example&providers=mock&min_seeders=",
+        headers={"HX-Request": "true"},
+    )
+    assert response.status_code == 200
+    assert "Example" in response.text
 
 
 async def test_static_assets_and_health_smoke(client):

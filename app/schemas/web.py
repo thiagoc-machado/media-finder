@@ -116,6 +116,15 @@ class SearchQueryParams(BaseModel):
             raise ValueError("Use um tamanho como 700 MB ou 1.5 GB.") from exc
         return value.strip()
 
+    @field_validator("season", "episode", "min_seeders", mode="before")
+    @classmethod
+    def validate_optional_integer(cls, value: object) -> object:
+        """Treat empty HTML number inputs as omitted optional values."""
+
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return None
+        return value
+
     @field_validator("required_terms", "excluded_terms", mode="before")
     @classmethod
     def validate_terms(cls, value: object) -> str | None:
@@ -175,7 +184,7 @@ class SearchQueryParams(BaseModel):
             trackers=self.trackers,
             min_size_bytes=min_size_bytes,
             max_size_bytes=max_size_bytes,
-            min_seeders=self.min_seeders,
+            min_seeders=self.min_seeders if self.min_seeders and self.min_seeders > 0 else None,
             required_terms=_split_terms(self.required_terms),
             excluded_terms=_split_terms(self.excluded_terms),
         )

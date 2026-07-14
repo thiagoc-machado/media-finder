@@ -19,6 +19,7 @@ from app.exceptions import (
 )
 
 MAX_PROVIDER_RESPONSE_BYTES = 8 * 1024 * 1024
+_USER_AGENT = "Media-Finder/0.1.0"
 
 
 class ProviderHTTPClient:
@@ -104,7 +105,7 @@ class ProviderHTTPClient:
     ) -> httpx.Response:
         if not path.startswith("/") or "//" in path[1:] or any(ord(char) < 32 for char in path):
             raise ProviderConnectionError("Provider request path is invalid")
-        request_headers = {"X-Request-ID": uuid.uuid4().hex, **(headers or {})}
+        request_headers = {"User-Agent": _USER_AGENT, "X-Request-ID": uuid.uuid4().hex, **(headers or {})}
         try:
             response = await self._client.get(path, params=params, headers=request_headers)
         except httpx.TimeoutException as exc:

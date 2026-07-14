@@ -115,7 +115,10 @@ RESULTS_XML = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 async def test_provider_http_client_maps_auth_and_invalid_payloads():
+    seen_headers = []
+
     async def handler(request: httpx.Request) -> httpx.Response:
+        seen_headers.append(request.headers)
         if request.url.path == "/auth":
             return httpx.Response(401, request=request)
         if request.url.path == "/xml":
@@ -137,6 +140,7 @@ async def test_provider_http_client_maps_auth_and_invalid_payloads():
         await client.get_json("/invalid")
     with pytest.raises(ProviderInvalidResponseError):
         await client.get_xml("/xml")
+    assert seen_headers[0]["user-agent"] == "Media-Finder/0.1.0"
     await client.close()
     await injected.aclose()
 
