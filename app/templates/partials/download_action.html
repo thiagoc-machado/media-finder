@@ -11,6 +11,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button class="button button-small download-button" type="submit" data-download-button disabled>Download</button>
   </form>
+  {% if view.result.magnet_url or view.result.info_hash %}<a class="button button-small magnet-button" href="{{ url_for('search_result_magnet', result_token=view.result_token) }}" target="_blank" rel="noopener">Abrir magnet</a>{% endif %}
   <span class="download-reason" data-download-reason>Checking qBittorrent…</span>
   <div id="download-feedback-{{ view.result_token }}" class="download-feedback" aria-live="polite"></div>
   {% if download_media_type in ['movie', 'series'] %}

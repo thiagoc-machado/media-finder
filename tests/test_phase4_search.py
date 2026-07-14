@@ -64,6 +64,7 @@ async def test_valid_htmx_search_uses_pipeline_and_renders_desktop_and_mobile_re
     assert "result-card" in response.text
     assert "results-table" in response.text
     assert "Download" in response.text
+    assert "Abrir magnet" in response.text
     assert "disabled" in response.text
     assert "magnet:?xt=urn:btih:1111111111111111111111111111111111111111" not in response.text
     assert '"mock_result"' not in response.text
@@ -112,6 +113,10 @@ async def test_search_result_token_detail_is_temporary_and_sanitized(client):
     assert "mock_result" not in detail.text
     assert "Copy magnet" in detail.text
     assert "disabled" in detail.text
+
+    magnet = await client.get(f"/search/result/{token}/magnet", follow_redirects=False)
+    assert magnet.status_code == 307
+    assert magnet.headers["location"].startswith("magnet:")
 
     missing = await client.get("/search/result/not-a-real-token")
     assert missing.status_code == 404

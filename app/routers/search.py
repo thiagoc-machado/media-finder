@@ -5,6 +5,7 @@ import logging
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy import desc, func, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -12,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.dependencies import database_session
+from app.exceptions import InvalidMagnetError
 from app.models.search_history import SearchHistory
 from app.providers.registry import ProviderNotFoundError, ProviderRegistry
 from app.routers.pages import build_page_context, form_state_from_params
@@ -21,6 +23,7 @@ from app.schemas.web import SearchQueryParams
 from app.services.pipeline_service import process_search_results
 from app.services.scoring_service import ScoringPreferences
 from app.services.search_service import SearchService
+from app.utils.magnet import build_magnet, normalize_magnet
 from app.web_templates import templates
 
 logger = logging.getLogger(__name__)
@@ -151,6 +154,7 @@ async def resolved_search(
         "processed": processed,
         "result_views": result_views,
         "search_query": resolved.title,
+        "poster_url": resolved.poster_url,
         "search_params": form_state_from_params(params),
         "providers_requested": execution.providers_requested,
         "providers_succeeded": execution.providers_succeeded,
@@ -221,6 +225,20 @@ async def search_result_detail(request: Request, result_token: str):
         name="result_detail.html",
         context={**build_page_context(request), **context},
     )
+
+
+@router.get("/result/{result_token}/magnet", name="search_result_magnet")
+async def search_result_magnet(request: Request, result_token: str):
+    """Open a stored magnet through a short-lived server-side result token."""
+
+    result = await request.app.state.result_store.get(result_token)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Resultado expirado ou inexistente.")
+    try:
+        magnet_url = normalize_magnet(result.magnet_url) if result.magnet_url else build_magnet(result.info_hash or "")
+    except InvalidMagnetError as exc:
+        raise HTTPException(status_code=404, detail="Este resultado não possui um magnet válido.") from exc
+    return RedirectResponse(url=magnet_url, status_code=307)
 
 
 def _parse_query_params(request: Request, settings) -> SearchQueryParams:

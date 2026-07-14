@@ -1,5 +1,5 @@
 <tr>
-  <td class="result-title-cell"><strong title="{{ view.result.title }}">{{ view.result.title }}</strong>{% if view.result.release_group %}<small>{{ view.result.release_group }}</small>{% endif %}</td>
+  <td class="result-title-cell"><div class="result-title-with-poster">{% if poster_url %}<img class="result-poster" src="{{ poster_url }}" alt="Capa de {{ search_query }}" loading="lazy">{% endif %}<div><strong title="{{ view.result.title }}">{{ view.result.title }}</strong>{% if view.result.release_group %}<small>{{ view.result.release_group }}</small>{% endif %}</div></div></td>
   <td>{{ (view.result.providers or [view.result.provider])|join(', ') }}</td>
   <td>{{ view.result.quality or '—' }}</td>
   <td>{{ view.result.languages|join(', ') if view.result.languages else '—' }}</td>

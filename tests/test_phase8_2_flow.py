@@ -70,6 +70,7 @@ async def test_tmdb_candidate_selection_creates_resolved_movie_and_searches(clie
     )
     assert releases.status_code == 200
     assert "Interstellar" in releases.text or "Brutos:" in releases.text
+    assert 'class="result-card-poster"' in releases.text
     with database.SessionLocal() as session:
         row = session.scalar(select(SearchHistory).order_by(SearchHistory.id.desc()))
         assert row is not None
