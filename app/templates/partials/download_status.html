@@ -1,2 +1,3 @@
-<span class="status-badge status-{{ download.status }}">{{ download.status }}</span>
+{% set status_labels = {"queued": "Na fila", "duplicate": "Já existente", "metadata": "Aguardando metadados", "stalled": "Sem peers", "downloading": "Baixando", "completed": "Concluído", "failed": "Falhou", "unknown": "Desconhecido"} %}
+<span class="status-badge status-{{ download.status }}">{{ status_labels.get(download.status, download.status) }}</span>
 {% if download.error_message %}<small class="download-error">{{ download.error_message }}</small>{% endif %}

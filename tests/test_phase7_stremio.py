@@ -112,6 +112,18 @@ def test_stream_normalization_classifies_capabilities_without_fetching_urls():
     assert magnet_result.download_capability == "magnet"
     assert magnet_result.info_hash == HASH
     assert magnet_result.trackers == ["udp://tracker.example:80/announce"]
+    embedded_tracker_result = normalize_stremio_stream(
+        StremioStream.model_validate(
+            {
+                "infoHash": HASH,
+                "url": f"magnet:?xt=urn:btih:{HASH}&tr=udp%3A%2F%2Fembedded.example%3A80%2Fannounce",
+            }
+        ),
+        "torrentio",
+        "movie",
+        "tt1234567",
+    )
+    assert embedded_tracker_result.trackers == ["udp://embedded.example:80/announce"]
     assert http_result.download_capability == "http_stream"
     assert http_result.source_url == "https://stream.example/live.m3u8"
 

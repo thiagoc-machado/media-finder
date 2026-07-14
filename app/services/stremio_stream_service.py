@@ -35,10 +35,10 @@ def normalize_stremio_stream(
         elif stream.url and stream.url.casefold().startswith("magnet:"):
             hash_value = parse_magnet(stream.url).info_hash
         if hash_value:
-            magnet = build_magnet(hash_value, trackers=_recognized_trackers(stream.sources))
+            magnet = build_magnet(hash_value, trackers=_stream_trackers(stream))
     except (InvalidMagnetError, AttributeError):
         hash_value = None
-    trackers = _recognized_trackers(stream.sources)
+    trackers = _stream_trackers(stream)
     url = safe_external_url(stream.url)
     external_url = safe_external_url(stream.external_url)
     if hash_value:
@@ -124,4 +124,18 @@ def _recognized_trackers(sources: list[str]) -> list[str]:
         candidate = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), ""))
         if candidate.casefold() not in {item.casefold() for item in trackers}:
             trackers.append(candidate)
+    return trackers
+
+
+def _stream_trackers(stream: StremioStream) -> list[str]:
+    """Combine protocol tracker sources with trackers embedded in a magnet URL."""
+
+    trackers = _recognized_trackers(stream.sources)
+    if stream.url and stream.url.casefold().startswith("magnet:"):
+        try:
+            for tracker in parse_magnet(stream.url).trackers:
+                if tracker.casefold() not in {item.casefold() for item in trackers}:
+                    trackers.append(tracker)
+        except InvalidMagnetError:
+            pass
     return trackers

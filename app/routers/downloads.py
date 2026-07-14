@@ -185,7 +185,7 @@ def _result_magnet(result) -> str:
     if result.magnet_url:
         return result.magnet_url
     if result.info_hash:
-        return build_magnet(result.info_hash)
+        return build_magnet(result.info_hash, trackers=result.trackers)
     raise InvalidMagnetError("Result has no magnet or info hash")
 
 
@@ -299,7 +299,11 @@ def _download_view(row: DownloadHistory) -> dict:
 
 def _local_status_for_qbit_state(state: str) -> str:
     normalized = state.casefold()
-    if normalized in {"downloading", "forceddl", "stalleddl", "metadl"}:
+    if normalized in {"metadl"}:
+        return "metadata"
+    if normalized in {"stalleddl"}:
+        return "stalled"
+    if normalized in {"downloading", "forceddl"}:
         return "downloading"
     if normalized in {"uploading", "stalledup", "pausedup", "completed"}:
         return "completed"

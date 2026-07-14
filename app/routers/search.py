@@ -235,7 +235,11 @@ async def search_result_magnet(request: Request, result_token: str):
     if result is None:
         raise HTTPException(status_code=404, detail="Resultado expirado ou inexistente.")
     try:
-        magnet_url = normalize_magnet(result.magnet_url) if result.magnet_url else build_magnet(result.info_hash or "")
+        magnet_url = (
+            normalize_magnet(result.magnet_url)
+            if result.magnet_url
+            else build_magnet(result.info_hash or "", trackers=result.trackers)
+        )
     except InvalidMagnetError as exc:
         raise HTTPException(status_code=404, detail="Este resultado não possui um magnet válido.") from exc
     return RedirectResponse(url=magnet_url, status_code=307)

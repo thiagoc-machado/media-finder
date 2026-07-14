@@ -4,7 +4,7 @@ from app.config import Settings
 
 
 def test_settings_defaults_match_deployment_contract():
-    settings = Settings()
+    settings = Settings(_env_file=None)
 
     assert settings.app_name == "Media Finder"
     assert settings.app_port == 8091
