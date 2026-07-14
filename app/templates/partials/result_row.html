@@ -9,7 +9,7 @@
   <td><span class="capability-badge capability-{{ view.result.download_capability }}">{{ view.result.download_capability }}</span></td>
   <td><span class="score-value">{{ "%.1f"|format(view.result.score) }}</span><details class="score-details"><summary>?</summary><ul>{% for line in view.result.score_breakdown %}<li>{{ line }}</li>{% else %}<li>Sem componentes adicionais.</li>{% endfor %}</ul></details></td>
   <td class="result-actions">
-    <a class="button button-small" href="{{ url_for('search_result_detail', result_token=view.result_token) }}" hx-get="{{ url_for('search_result_detail', result_token=view.result_token) }}" hx-target="#result-detail" hx-swap="innerHTML">Details</a>
+    <a class="button button-small" href="{{ url_for('search_result_detail', result_token=view.result_token) }}" hx-get="{{ url_for('search_result_detail', result_token=view.result_token) }}" hx-target="#app-modal-content" hx-swap="innerHTML">Detalhes</a>
     {% include "partials/download_action.html" %}
   </td>
 </tr>

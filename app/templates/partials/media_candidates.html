@@ -6,7 +6,7 @@
     {% for error in metadata_errors %}<span>{{ error.provider }}: {{ error.message }}</span>{% endfor %}
   </div>
 {% elif not metadata_candidates %}
-  <div class="metadata-empty"><strong>Nenhuma mídia encontrada.</strong><span>Tente outro título.</span></div>
+  <div class="metadata-empty"><strong>Nenhuma mídia dentro da classificação escolhida.</strong><span>Tente outro título ou aumente o limite de idade.</span></div>
 {% else %}
   <section class="metadata-candidates" aria-label="Candidatos de mídia">
     {% for view in metadata_candidates %}

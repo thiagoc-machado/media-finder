@@ -74,6 +74,8 @@ class FakeTMDBHTTP:
                 "overview": "A film.",
                 "poster_path": "/poster.jpg",
             }
+        if path == "/movie/27205/release_dates":
+            return {"results": [{"iso_3166_1": "ES", "release_dates": [{"certification": "12"}]}]}
         if path == "/tv/123":
             return {
                 "id": 123,
@@ -84,6 +86,8 @@ class FakeTMDBHTTP:
                 "number_of_seasons": 5,
                 "number_of_episodes": 62,
             }
+        if path == "/tv/123/content_ratings":
+            return {"results": [{"iso_3166_1": "ES", "rating": "16"}]}
         if path.endswith("/external_ids"):
             return {"imdb_id": "tt0816692", "tvdb_id": 81189, "wikidata_id": "Q123"}
         if path == "/tv/123/season/1":

@@ -10,10 +10,10 @@
   </section>
   {% if downloads %}
     <section class="results-shell download-history-shell" aria-labelledby="downloads-heading">
-      <header class="results-header"><div><p class="section-kicker">qBittorrent</p><h2 id="downloads-heading">Download history</h2></div><span class="muted">Atualização manual de status</span></header>
+      <header class="results-header"><div><p class="section-kicker">qBittorrent</p><h2 id="downloads-heading">Histórico de downloads</h2></div><span class="muted">Atualização manual de status</span></header>
       <div class="results-table-wrap">
         <table class="results-table downloads-table">
-          <thead><tr><th>Title</th><th>Type</th><th>Provider</th><th>Quality</th><th>Language</th><th>Category</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Título</th><th>Tipo</th><th>Provider</th><th>Qualidade</th><th>Idioma</th><th>Categoria</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead>
           <tbody>{% for download in downloads %}{% include "partials/download_row.html" %}{% endfor %}</tbody>
         </table>
       </div>

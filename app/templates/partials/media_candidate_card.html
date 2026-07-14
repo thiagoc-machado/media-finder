@@ -1,4 +1,4 @@
-<article class="media-candidate-card">
+<article class="media-candidate-card" role="button" tabindex="0" data-select-card aria-label="Selecionar {{ view.candidate.title }}">
   <div class="media-candidate-poster">
     {% if view.poster_url %}
       <img src="{{ view.poster_url }}" alt="Pôster de {{ view.candidate.title }}" loading="lazy">
@@ -7,7 +7,7 @@
     {% endif %}
   </div>
   <div class="media-candidate-copy">
-    <p class="card-label">{{ view.candidate.media_type }} · TMDB</p>
+    <p class="card-label">{{ view.candidate.media_type }} · TMDB{% if view.candidate.age_rating is not none %} · {{ view.candidate.age_rating ~ '+' if view.candidate.age_rating else 'Livre' }}{% endif %}</p>
     <h3>{{ view.candidate.title }}{% if view.candidate.year %} <span>({{ view.candidate.year }})</span>{% endif %}</h3>
     {% if view.candidate.original_title and view.candidate.original_title != view.candidate.title %}
       <p class="media-original-title">{{ view.candidate.original_title }}</p>
@@ -19,6 +19,6 @@
     </div>
     <a class="button button-small" href="/metadata/select/{{ view.candidate_token }}"
        hx-get="/metadata/select/{{ view.candidate_token }}"
-       hx-target="closest .media-candidate-card" hx-swap="afterend">Selecionar</a>
+       hx-target="#app-modal-content" hx-swap="innerHTML">Selecionar</a>
   </div>
 </article>

@@ -39,7 +39,7 @@ async def test_home_renders_functional_form_options_and_local_assets(client):
     assert 'value="2160p"' in response.text
     assert 'value="x265"' in response.text
     assert 'value="WEB-DL"' in response.text
-    assert "Searching providers…" in response.text
+    assert "Pesquisando nas fontes…" in response.text
     assert "fonts.googleapis.com" not in response.text
 
 

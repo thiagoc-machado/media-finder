@@ -79,18 +79,14 @@ async def create_download(
         row = _save_history(db, result, parsed.info_hash, category, outcome)
         return _feedback_from_outcome(request, outcome, row)
 
-    existing = _find_history_by_hash(db, parsed.info_hash)
     try:
         qbit_exists = await service.torrent_exists(parsed.info_hash)
     except (QBitTorrentAuthenticationError, QBitTorrentTimeoutError, QBitTorrentUnavailableError) as exc:
-        if existing is not None and existing.status != "failed":
-            outcome = _duplicate_outcome(parsed.info_hash, category)
-        else:
-            outcome = _failed_outcome(parsed.info_hash, category, _safe_exception_message(exc))
+        outcome = _failed_outcome(parsed.info_hash, category, _safe_exception_message(exc))
         row = _save_history(db, result, parsed.info_hash, category, outcome)
         return _feedback_from_outcome(request, outcome, row)
 
-    if qbit_exists or (existing is not None and existing.status != "failed"):
+    if qbit_exists:
         outcome = _duplicate_outcome(parsed.info_hash, category)
         row = _save_history(db, result, parsed.info_hash, category, outcome)
         return _feedback_from_outcome(request, outcome, row)
@@ -187,14 +183,6 @@ def _result_magnet(result) -> str:
     if result.info_hash:
         return build_magnet(result.info_hash, trackers=result.trackers)
     raise InvalidMagnetError("Result has no magnet or info hash")
-
-
-def _find_history_by_hash(db: Session, info_hash: str) -> DownloadHistory | None:
-    return db.scalar(
-        select(DownloadHistory)
-        .where(func.lower(DownloadHistory.info_hash) == info_hash.casefold())
-        .order_by(desc(DownloadHistory.created_at), desc(DownloadHistory.id))
-    )
 
 
 def _save_history(db: Session, result, info_hash: str, category: str, outcome) -> DownloadHistory:

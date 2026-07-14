@@ -15,6 +15,7 @@ Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário,
 - Exemplo de serviço para Docker Compose.
 - Contrato assíncrono `SearchProvider`, schemas normalizados e registry explícito.
 - Provider mock determinístico disponível somente nas fixtures de teste; o runtime oferece exclusivamente providers reais configurados.
+- Provider opcional Google Drive em modo somente leitura, limitado a uma pasta explicitamente configurada pelo usuário.
 - `SearchService` com execução concorrente, timeout por provider e erros parciais estruturados.
 - Endpoint JSON `GET /providers/health` para providers habilitados.
 - Contratos `SearchFilters`, `SearchSort`, `ScoringPreferences` e `ProcessedSearchResult`.

@@ -12,7 +12,7 @@
       </div>
     </div>
     <p class="media-overview">{{ resolved_media.overview or "Sem sinopse disponível." }}</p>
-    <button class="text-button" type="button" onclick="history.back()">← Voltar aos candidatos</button>
+      <button class="text-button" type="button" data-modal-close>← Voltar aos candidatos</button>
     {% if resolved_media.media_type == "movie" %}
       {% include "partials/resolved_release_form.html" %}
     {% else %}

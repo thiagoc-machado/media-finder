@@ -26,6 +26,7 @@ class MetadataCandidate(BaseModel):
     vote_count: int | None = None
     original_language: str | None = None
     adult: bool = False
+    age_rating: int | None = Field(default=None, ge=0, le=18)
 
 
 class ExternalIds(BaseModel):

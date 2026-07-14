@@ -10,6 +10,7 @@ from app import __version__
 from app.clients.tmdb_client import TMDBClient
 from app.config import get_settings
 from app.providers.jackett import JackettProvider
+from app.providers.google_drive import GoogleDriveProvider
 from app.providers.mediafusion import MediaFusionProvider
 from app.providers.prowlarr import ProwlarrProvider
 from app.providers.registry import ProviderRegistry
@@ -55,6 +56,10 @@ if settings_config.jackett_enabled:
     jackett_provider = JackettProvider(settings_config)
     provider_registry.register(jackett_provider, priority=30)
     provider_instances.append(jackett_provider)
+if settings_config.google_drive_enabled and settings_config.google_drive_folder_url:
+    google_drive_provider = GoogleDriveProvider(settings_config)
+    provider_registry.register(google_drive_provider, priority=60)
+    provider_instances.append(google_drive_provider)
 if settings_config.torrentio_enabled and settings_config.torrentio_manifest_url:
     torrentio_provider = TorrentioProvider(settings_config)
     provider_registry.register(torrentio_provider, priority=40)

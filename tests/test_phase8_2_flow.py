@@ -54,7 +54,7 @@ async def test_tmdb_candidate_selection_creates_resolved_movie_and_searches(clie
     assert candidates.status_code == 200
     token = _candidate_tokens(candidates.text)[0]
     assert "tmdb_id" not in candidates.text
-    assert 'hx-target="closest .media-candidate-card" hx-swap="afterend"' in candidates.text
+    assert 'hx-target="#app-modal-content" hx-swap="innerHTML"' in candidates.text
 
     selected = await client.get(f"/metadata/select/{token}")
     assert selected.status_code == 200
@@ -82,7 +82,10 @@ async def test_tmdb_candidate_selection_creates_resolved_movie_and_searches(clie
 
 async def test_series_selection_validates_season_episode_and_searches(client, monkeypatch):
     await _install_fake_tmdb(client, monkeypatch)
-    response = await client.get("/metadata/search", params={"query": "Breaking Bad", "media_type": "series"})
+    response = await client.get(
+        "/metadata/search",
+        params={"query": "Breaking Bad", "media_type": "series", "age_limit": 18},
+    )
     token = _candidate_tokens(response.text)[0]
     selected = await client.get(f"/metadata/select/{token}")
     assert selected.status_code == 200

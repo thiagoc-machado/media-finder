@@ -39,6 +39,17 @@
         {% block content %}{% endblock %}
       </main>
 
+      <div id="app-modal" class="app-modal" role="dialog" aria-modal="true" aria-labelledby="app-modal-title" hidden>
+        <div class="app-modal-backdrop" data-modal-close></div>
+        <section class="app-modal-dialog" role="document">
+          <div class="app-modal-toolbar">
+            <span id="app-modal-title" class="sr-only">Detalhes</span>
+            <button class="modal-close" type="button" aria-label="Fechar janela" data-modal-close>×</button>
+          </div>
+          <div id="app-modal-content" class="app-modal-content" aria-live="polite"></div>
+        </section>
+      </div>
+
       <footer class="site-footer">
         <span>{{ app_name }} <span class="muted">v{{ version }}</span></span>
         <span class="footer-note">Conteúdo e fontes configurados pelo usuário</span>

@@ -119,6 +119,12 @@ class Settings(BaseSettings):
     jackett_max_concurrency: int = Field(default=3, ge=1, le=32)
     jackett_indexers: str = "all"
 
+    google_drive_enabled: bool = False
+    google_drive_folder_url: str = ""
+    google_drive_api_key: str = ""
+    google_drive_timeout_seconds: float = Field(default=10, ge=1, le=120)
+    google_drive_max_results: int = Field(default=100, ge=1, le=1000)
+
     torrentio_enabled: bool = False
     torrentio_manifest_url: str = ""
     torrentio_timeout_seconds: float = Field(default=20, ge=1, le=120)
@@ -227,6 +233,20 @@ class Settings(BaseSettings):
         if any(not re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", item) for item in indexers):
             raise ValueError("Jackett indexers are invalid")
         return ",".join(indexers)
+
+    @field_validator("google_drive_folder_url", mode="before")
+    @classmethod
+    def validate_google_drive_folder_url(cls, value: str) -> str:
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return ""
+        if not isinstance(value, str) or len(value.strip()) > 500:
+            raise ValueError("Google Drive folder URL is invalid")
+        parsed = urlsplit(value.strip())
+        if parsed.scheme != "https" or parsed.hostname not in {"drive.google.com", "www.drive.google.com"}:
+            raise ValueError("Google Drive folder URL must be an HTTPS drive.google.com URL")
+        if "/folders/" not in parsed.path and "id=" not in parsed.query:
+            raise ValueError("Google Drive folder URL must identify a folder")
+        return value.strip()
 
     @property
     def version(self) -> str:

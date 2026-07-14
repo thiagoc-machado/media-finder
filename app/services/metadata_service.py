@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 
 from app.clients.tmdb_client import TMDBClient
@@ -23,16 +24,25 @@ class MetadataService:
     def __init__(self, tmdb: TMDBClient) -> None:
         self.tmdb = tmdb
 
-    async def search(self, query: str, media_type: str = "all") -> MetadataSearchResult:
+    async def search(self, query: str, media_type: str = "all", max_age: int | None = 13) -> MetadataSearchResult:
         """Search TMDB and optionally restrict candidates to movie or series."""
 
         started = time.perf_counter()
         try:
             if media_type not in {"movie", "series", "all"}:
                 raise ValueError("Metadata media type must be movie, series or all")
+            if max_age is not None and (max_age < 0 or max_age > 18):
+                raise ValueError("A classificação etária deve estar entre 0 e 18 anos")
             candidates = await self.tmdb.search_multi(query)
             if media_type in {"movie", "series"}:
                 candidates = [candidate for candidate in candidates if candidate.media_type == media_type]
+            if max_age is not None:
+                rated = await asyncio.gather(*(self._with_age_rating(candidate) for candidate in candidates))
+                candidates = [
+                    candidate
+                    for candidate in rated
+                    if candidate.age_rating is not None and candidate.age_rating <= max_age
+                ]
             return MetadataSearchResult(
                 candidates=candidates,
                 providers_requested=["tmdb"],
@@ -51,6 +61,15 @@ class MetadataService:
                 providers_requested=["tmdb"],
                 duration_ms=_elapsed_ms(started),
             )
+
+    async def _with_age_rating(self, candidate: MetadataCandidate) -> MetadataCandidate:
+        """Attach a regional age rating without failing the whole catalog search."""
+
+        try:
+            rating = await self.tmdb.get_age_rating(candidate.media_type, int(candidate.provider_id))
+        except Exception:
+            rating = None
+        return candidate.model_copy(update={"age_rating": rating})
 
     async def get_details(self, media_type: str, tmdb_id: int) -> MetadataDetails:
         """Fetch details and external IDs only after a candidate is selected."""

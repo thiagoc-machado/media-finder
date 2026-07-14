@@ -284,7 +284,15 @@ def _parse_resolved_params(request: Request, resolved: ResolvedMedia, settings) 
         "trackers",
     }
     values = _collect_query_values(request, list_fields, excluded={"resolved_media_token"})
-    values.update({"query": resolved.title, "media_type": resolved.media_type, "imdb_id": resolved.imdb_id})
+    # Indexers commonly store the original title. Keep the localized title for
+    # the UI, but use the original TMDB title when it is available for search.
+    values.update(
+        {
+            "query": resolved.original_title or resolved.title,
+            "media_type": resolved.media_type,
+            "imdb_id": resolved.imdb_id,
+        }
+    )
     params = SearchQueryParams(**values)
     if len(params.query) < settings.search_query_min_length:
         raise ValueError(f"A busca deve ter pelo menos {settings.search_query_min_length} caracteres.")
@@ -329,7 +337,11 @@ async def _execute_search(
     search_request = params.to_search_request()
     if resolved is not None:
         search_request = search_request.model_copy(
-            update={"tmdb_id": resolved.tmdb_id, "imdb_id": resolved.imdb_id, "query": resolved.title}
+            update={
+                "tmdb_id": resolved.tmdb_id,
+                "imdb_id": resolved.imdb_id,
+                "query": resolved.original_title or resolved.title,
+            }
         )
     execution = await SearchService(
         request.app.state.provider_registry,

@@ -40,9 +40,8 @@
         </div>
       </div>
       <div class="mobile-results">{% for view in result_views %}{% include "partials/result_card.html" %}{% endfor %}</div>
-      <div id="result-detail" class="result-detail-target" aria-live="polite"></div>
     {% else %}
-      <div class="empty-state results-empty-state"><div class="empty-icon" aria-hidden="true">∅</div><h2>No results matched the current search and filters.</h2><p>Try removing language, size, or seed restrictions.</p></div>
+      <div class="empty-state results-empty-state"><div class="empty-icon" aria-hidden="true">∅</div><h2>Nenhum resultado corresponde aos filtros.</h2><p>Tente remover idioma, tamanho ou restrições de seeds.</p></div>
     {% endif %}
   </section>
 {% endif %}

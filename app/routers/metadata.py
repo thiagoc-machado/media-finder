@@ -18,6 +18,7 @@ async def metadata_search(
     request: Request,
     query: str = Query(default=""),
     media_type: Literal["movie", "series", "all"] = "all",
+    age_limit: int = Query(default=13, ge=0, le=18),
 ):
     """Search TMDB and return safe candidate cards as an HTMX partial."""
 
@@ -42,7 +43,7 @@ async def metadata_search(
             context={"metadata_error": str(exc), "metadata_candidates": []},
             status_code=400,
         )
-    result = await request.app.state.metadata_service.search(normalized_query, media_type)
+    result = await request.app.state.metadata_service.search(normalized_query, media_type, max_age=age_limit)
     candidates = []
     for candidate in result.candidates:
         token = await request.app.state.metadata_result_store.save_candidate(
@@ -66,6 +67,7 @@ async def metadata_search(
             "metadata_query": normalized_query,
             "metadata_media_type": media_type,
             "metadata_duration_ms": result.duration_ms,
+            "metadata_age_limit": age_limit,
         },
     )
 

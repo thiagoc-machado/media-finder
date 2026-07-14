@@ -23,6 +23,73 @@
     link.classList.toggle("is-active", active);
   });
 
+  var modal = query("#app-modal");
+  var modalContent = query("#app-modal-content");
+  var lastFocused = null;
+
+  function openModal() {
+    if (!modal) return;
+    if (modal.hidden) lastFocused = document.activeElement;
+    modal.hidden = false;
+    document.body.classList.add("modal-open");
+    window.setTimeout(function () {
+      var close = modal.querySelector("[data-modal-close]");
+      if (close) close.focus();
+    }, 0);
+  }
+
+  function closeModal() {
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.classList.remove("modal-open");
+    if (modalContent) modalContent.innerHTML = "";
+    if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
+  }
+
+  document.body.addEventListener("click", function (event) {
+    var close = event.target && event.target.closest ? event.target.closest("[data-modal-close]") : null;
+    if (close) closeModal();
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && modal && !modal.hidden) closeModal();
+  });
+  document.body.addEventListener("htmx:beforeRequest", function (event) {
+    var target = event.detail && event.detail.target;
+    if (!target || target.id !== "app-modal-content") return;
+    openModal();
+    if (modalContent) modalContent.innerHTML = '<div class="modal-loading"><span class="spinner" aria-hidden="true"></span><span>Carregando detalhes…</span></div>';
+  });
+  document.body.addEventListener("htmx:afterSwap", function (event) {
+    var target = event.detail && event.detail.target;
+    if (target && target.id === "app-modal-content") {
+      openModal();
+      var heading = modalContent && modalContent.querySelector("h1, h2, h3");
+      if (heading && modal) {
+        heading.id = "app-modal-heading";
+        var title = modal.querySelector("#app-modal-title");
+        if (title) { title.textContent = heading.textContent; title.classList.remove("sr-only"); }
+        modal.setAttribute("aria-labelledby", "app-modal-heading");
+      }
+    }
+  });
+
+  function activateCandidateCard(card) {
+    var select = card && card.querySelector("a[href*='/metadata/select/']");
+    if (select) select.click();
+  }
+
+  document.body.addEventListener("click", function (event) {
+    var card = event.target && event.target.closest ? event.target.closest("[data-select-card]") : null;
+    if (!card || (event.target.closest && event.target.closest("a, button, input, select, textarea"))) return;
+    activateCandidateCard(card);
+  });
+  document.body.addEventListener("keydown", function (event) {
+    var card = event.target && event.target.closest ? event.target.closest("[data-select-card]") : null;
+    if (!card || (event.key !== "Enter" && event.key !== " ")) return;
+    event.preventDefault();
+    activateCandidateCard(card);
+  });
+
   function updateSeasonFields() {
     var mediaType = query("[data-media-type]");
     var fields = query("[data-season-fields]");
@@ -40,6 +107,21 @@
     mediaType.addEventListener("change", updateSeasonFields);
     updateSeasonFields();
   }
+
+  function updateAgeFilter(input) {
+    var output = document.querySelector("[data-age-output]");
+    if (!output) return;
+    var value = Number(input.value);
+    output.value = value === 0 ? "Livre" : value === 18 ? "Sem restrição" : value + " anos";
+    output.textContent = output.value;
+    input.setAttribute("aria-valuetext", output.value);
+    input.style.setProperty("--age-progress", (value / 18 * 100) + "%");
+  }
+
+  document.querySelectorAll("[data-age-filter]").forEach(function (input) {
+    updateAgeFilter(input);
+    input.addEventListener("input", function () { updateAgeFilter(input); });
+  });
 
   var selectAll = query("[data-select-all-providers]");
   if (selectAll) {

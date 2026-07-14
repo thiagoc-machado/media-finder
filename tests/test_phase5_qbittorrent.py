@@ -179,6 +179,32 @@ async def test_duplicate_is_idempotent(client, monkeypatch):
     assert fake.added == []
 
 
+async def test_stale_local_history_does_not_block_readd(client, monkeypatch):
+    fake = FakeQBitTorrentService()
+    monkeypatch.setattr(client._transport.app.state, "qbittorrent_service", fake)
+    with database.SessionLocal() as session:
+        session.add(
+            DownloadHistory(
+                title="Old result",
+                provider="torrentio",
+                info_hash="1" * 40,
+                media_type="movie",
+                category="movies",
+                status="queued",
+                qbittorrent_hash="1" * 40,
+            )
+        )
+        session.commit()
+
+    search = await client.get("/search?query=Example&providers=mock", headers={"HX-Request": "true"})
+    token, csrf = _token_and_csrf(search.text)
+    response = await client.post("/downloads", data={"result_token": token, "csrf_token": csrf})
+
+    assert response.status_code == 200
+    assert "Added to qBittorrent" in response.text
+    assert len(fake.added) == 1
+
+
 async def test_category_missing_and_status_refresh(client, monkeypatch):
     fake = FakeQBitTorrentService(
         categories={"series": QBitTorrentCategory(name="series")},

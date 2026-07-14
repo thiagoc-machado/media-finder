@@ -138,6 +138,24 @@ class TMDBClient:
         await self._cache.set("external_ids", cache_key, ids)
         return ids
 
+    async def get_age_rating(self, media_type: str, tmdb_id: int) -> int | None:
+        """Return the safest known regional age rating for one title."""
+
+        normalized_type = _normalize_media_type(media_type)
+        tmdb_id = _validate_tmdb_id(tmdb_id)
+        cache_key = f"{normalized_type}|{tmdb_id}|{self.settings.tmdb_region}|BR|US"
+        cached = await self._cache.get("age_rating", cache_key)
+        if cached is not None:
+            return cached
+        if normalized_type == "movie":
+            payload = await self._get_json(f"/movie/{tmdb_id}/release_dates", params={})
+            rating = _movie_age_rating(payload, self.settings.tmdb_region)
+        else:
+            payload = await self._get_json(f"/tv/{tmdb_id}/content_ratings", params={})
+            rating = _tv_age_rating(payload, self.settings.tmdb_region)
+        await self._cache.set("age_rating", cache_key, rating)
+        return rating
+
     async def get_tv_season(self, tmdb_id: int, season_number: int) -> SeasonDetails:
         """Fetch one TV season and its normalized episodes."""
 
@@ -284,6 +302,65 @@ def _external_ids_from_payload(payload: Any) -> ExternalIds:
         tvdb_id=safe_int(payload.get("tvdb_id")),
         wikidata_id=clean_text(payload.get("wikidata_id"), max_length=40),
     )
+
+
+def _movie_age_rating(payload: Any, preferred_region: str) -> int | None:
+    if not isinstance(payload, dict):
+        return None
+    entries = payload.get("results")
+    if not isinstance(entries, list):
+        return None
+    regions = [preferred_region.upper(), "BR", "US"]
+    for region in regions:
+        for entry in entries:
+            if not isinstance(entry, dict) or str(entry.get("iso_3166_1", "")).upper() != region:
+                continue
+            dates = entry.get("release_dates")
+            if not isinstance(dates, list):
+                continue
+            ratings = [_parse_age_rating(item.get("certification")) for item in dates if isinstance(item, dict)]
+            ratings = [rating for rating in ratings if rating is not None]
+            if ratings:
+                return max(ratings)
+    return None
+
+
+def _tv_age_rating(payload: Any, preferred_region: str) -> int | None:
+    if not isinstance(payload, dict):
+        return None
+    entries = payload.get("results")
+    if not isinstance(entries, list):
+        return None
+    regions = [preferred_region.upper(), "BR", "US"]
+    for region in regions:
+        ratings = [
+            _parse_age_rating(item.get("rating"))
+            for item in entries
+            if isinstance(item, dict) and str(item.get("iso_3166_1", "")).upper() == region
+        ]
+        ratings = [rating for rating in ratings if rating is not None]
+        if ratings:
+            return max(ratings)
+    return None
+
+
+def _parse_age_rating(value: Any) -> int | None:
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip().upper().replace(" ", "")
+    if normalized in {"L", "G", "TP", "TV-Y", "TV-G", "FREE"}:
+        return 0
+    if normalized in {"10", "TV-Y7", "TV-Y7-FV"}:
+        return 10
+    if normalized in {"12", "TV-PG", "PG-13"}:
+        return 12
+    if normalized in {"14"}:
+        return 14
+    if normalized in {"16", "TV-14"}:
+        return 16
+    if normalized in {"18", "TV-MA", "R", "NC-17"}:
+        return 18
+    return None
 
 
 def _season_from_payload(payload: Any, fallback_number: int) -> SeasonDetails:
