@@ -409,7 +409,7 @@ O entrypoint executa as migrations antes do boot. Em caso de falha, consulte `do
 
 Media Finder sends torrents to qBittorrent. Radarr and Sonarr only import them automatically when the corresponding media is already monitored.
 
-O fluxo fechado é: título → TMDB → IMDb → providers → filtros/deduplicação → resultado elegível → qBittorrent → histórico/status. Filmes usam `movies`; séries usam `series`. O botão de download é desabilitado quando a categoria não existe, qBittorrent está indisponível ou o resultado não possui magnet/hash.
+O fluxo fechado é: título → TMDB → IMDb → providers → filtros/deduplicação → resultado elegível → qBittorrent → histórico/status. Filmes usam `movies`; séries usam `series`. O botão de download é desabilitado quando a categoria não existe, qBittorrent está indisponível ou o resultado não possui magnet/hash; quando existe magnet, a UI também oferece `Abrir magnet` diretamente.
 
 Na validação local final, migrations, SQLite, `/health`, healthcheck, UID/GID e ausência de secrets nos logs passaram; o container consumiu aproximadamente 65 MiB em idle. Os providers externos não estavam executando neste workspace, portanto a validação real de Torrentio, MediaFusion, Prowlarr, Jackett e qBittorrent deve ser repetida no Compose do home server.
 

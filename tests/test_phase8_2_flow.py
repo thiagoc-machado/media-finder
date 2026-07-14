@@ -62,6 +62,8 @@ async def test_tmdb_candidate_selection_creates_resolved_movie_and_searches(clie
     assert "tt0816692" in selected.text
     resolved_token = re.search(r'name="resolved_media_token" value="([A-Za-z0-9_-]+)"', selected.text).group(1)
     assert f'hx-target="#resolved-search-results-{resolved_token}"' in selected.text
+    assert f'hx-indicator="#resolved-search-loading-{resolved_token}"' in selected.text
+    assert "Consultando providers…" in selected.text
 
     releases = await client.get(
         "/search/resolved",

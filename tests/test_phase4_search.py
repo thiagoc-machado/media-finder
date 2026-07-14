@@ -154,7 +154,8 @@ async def test_partial_provider_error_is_visible_without_hiding_success(client, 
 
     assert response.status_code == 200
     assert "Algumas fontes não responderam" in response.text
-    assert "bad: provider exploded" in response.text
+    assert ">bad</strong>" in response.text
+    assert "provider exploded" in response.text
     assert "Example" in response.text
 
 

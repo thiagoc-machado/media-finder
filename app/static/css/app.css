@@ -50,8 +50,12 @@
 .episode-search-controls > .muted { font-size: 11px; margin: 0 0 12px; }
 .episode-select-button.is-selected { border-color: rgba(213, 247, 104, 0.55); color: var(--lime); }
 .resolved-release-form { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
+.resolved-release-form.htmx-request { cursor: wait; opacity: .72; pointer-events: none; }
 .episode-search-controls .resolved-release-form { border-top: 0; margin-top: 0; padding-top: 0; }
 .resolved-search-results { margin-top: 24px; scroll-margin-top: 20px; }
+.resolved-search-loading { align-items: center; color: var(--lime); display: none; font-family: "DM Mono", monospace; font-size: 10px; gap: 8px; text-transform: uppercase; }
+.resolved-search-loading.htmx-request { display: inline-flex; opacity: 1; visibility: visible; }
+.resolved-search-error { background: rgba(238, 129, 86, 0.1); border: 1px solid rgba(238, 129, 86, 0.35); border-radius: 8px; color: #ffc4ae; font-size: 11px; margin: 12px 0 0; padding: 9px 11px; }
 .resolved-results-shell { margin-top: 0; }
 .resolved-provider-group { border: 0; display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; padding: 0; }
 .resolved-provider-group legend { color: var(--faint); flex-basis: 100%; font-family: "DM Mono", monospace; font-size: 10px; text-transform: uppercase; }

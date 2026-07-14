@@ -217,6 +217,34 @@
   document.body.addEventListener("htmx:afterRequest", function (event) {
     if (event.detail && event.detail.target && event.detail.target.id === "search-results") setSearching(false);
   });
+
+  function resolvedSearchForm(event) {
+    var element = event.detail && event.detail.elt;
+    return element && element.matches && element.matches(".resolved-release-form") ? element : null;
+  }
+
+  function clearResolvedSearchError(form) {
+    var error = form.querySelector("[data-resolved-search-error]");
+    if (error) error.hidden = true;
+  }
+
+  function showResolvedSearchError(form) {
+    var error = form.querySelector("[data-resolved-search-error]");
+    if (error) error.hidden = false;
+  }
+
+  document.body.addEventListener("htmx:beforeRequest", function (event) {
+    var form = resolvedSearchForm(event);
+    if (form) clearResolvedSearchError(form);
+  });
+  document.body.addEventListener("htmx:sendError", function (event) {
+    var form = resolvedSearchForm(event);
+    if (form) showResolvedSearchError(form);
+  });
+  document.body.addEventListener("htmx:timeout", function (event) {
+    var form = resolvedSearchForm(event);
+    if (form) showResolvedSearchError(form);
+  });
   document.body.addEventListener("htmx:sendError", function () {
     setSearching(false);
     var error = query("#search-form-errors");
