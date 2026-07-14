@@ -81,7 +81,8 @@ class FakeQBitTorrentService:
             }
         )
         self.exists = True
-        return AddTorrentResult(status="queued", info_hash=HASH, category="movies", message="Added to qBittorrent")
+        category = "series" if media_type == "series" else "movies"
+        return AddTorrentResult(status="queued", info_hash=HASH, category=category, message="Added to qBittorrent")
 
     async def get_torrent(self, info_hash):
         if not self.exists:
@@ -111,6 +112,9 @@ async def test_download_uses_only_result_token_and_persists_safe_history(client,
     monkeypatch.setattr(client._transport.app.state, "qbittorrent_service", fake)
     search = await client.get("/search?query=Example&providers=mock", headers={"HX-Request": "true"})
     token, csrf = _token_and_csrf(search.text)
+    assert (
+        "Radarr/Sonarr will only import this download automatically if the media is already monitored." in search.text
+    )
 
     response = await client.post(
         "/downloads",
@@ -199,6 +203,28 @@ async def test_category_missing_and_status_refresh(client, monkeypatch):
     status = await client.get(f"/downloads/{download_id}/status", headers={"HX-Request": "true"})
     assert status.status_code == 200
     assert "downloading" in status.text
+
+
+async def test_series_download_uses_series_category(client, monkeypatch):
+    fake = FakeQBitTorrentService(
+        categories={
+            "movies": QBitTorrentCategory(name="movies"),
+            "series": QBitTorrentCategory(name="series"),
+        }
+    )
+    monkeypatch.setattr(client._transport.app.state, "qbittorrent_service", fake)
+    search = await client.get(
+        "/search?query=SeriesDownload&providers=mock&media_type=series&season=1&episode=1",
+        headers={"HX-Request": "true"},
+    )
+    token, csrf = _token_and_csrf(search.text)
+    response = await client.post("/downloads", data={"result_token": token, "csrf_token": csrf})
+    assert response.status_code == 200
+    assert fake.added[0]["media_type"] == "series"
+    with database.SessionLocal() as session:
+        row = session.scalar(select(DownloadHistory).where(DownloadHistory.title.like("SeriesDownload%")))
+        assert row is not None
+        assert row.category == "series"
 
 
 async def test_download_history_page_is_paginated_and_safe(client, monkeypatch):

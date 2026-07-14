@@ -1,0 +1,12 @@
+<section class="metadata-season-list" aria-label="Temporadas disponíveis">
+  <h3>Selecione uma temporada</h3>
+  <div class="season-choice-grid">
+    {% for season in resolved_media.seasons %}
+      <a class="button button-small button-secondary" href="/metadata/series/{{ resolved_media_token }}/season/{{ season.season_number }}"
+         hx-get="/metadata/series/{{ resolved_media_token }}/season/{{ season.season_number }}"
+         hx-target="#metadata-episodes" hx-swap="innerHTML">
+        {{ season.name or "Temporada " ~ season.season_number }}{% if season.episode_count is not none %} · {{ season.episode_count }} eps.{% endif %}
+      </a>
+    {% else %}<p class="muted">Nenhuma temporada com episódios disponíveis.</p>{% endfor %}
+  </div>
+</section>

@@ -1,0 +1,15 @@
+<article class="metadata-detail" aria-label="Detalhes da mídia">
+  <div class="metadata-detail-heading">
+    {% if poster_url %}<img src="{{ poster_url }}" alt="Pôster de {{ metadata.title }}" loading="lazy">{% endif %}
+    <div>
+      <p class="card-label">{{ metadata.media_type }} · TMDB {{ metadata.provider_id }}</p>
+      <h2>{{ metadata.title }}{% if metadata.year %} <span>({{ metadata.year }})</span>{% endif %}</h2>
+      {% if metadata.original_title and metadata.original_title != metadata.title %}<p class="media-original-title">{{ metadata.original_title }}</p>{% endif %}
+      {% if metadata.external_ids.imdb_id %}<p class="metadata-imdb">IMDb: {{ metadata.external_ids.imdb_id }}</p>{% endif %}
+    </div>
+  </div>
+  <p class="media-overview">{{ metadata.overview or "Sem sinopse disponível." }}</p>
+  {% if metadata.media_type == "series" and metadata.seasons %}
+    <div class="metadata-seasons"><strong>Temporadas</strong><div>{% for season in metadata.seasons %}<span>{{ season.season_number }}{% if season.episode_count is not none %} · {{ season.episode_count }} eps.{% endif %}</span>{% endfor %}</div></div>
+  {% endif %}
+</article>

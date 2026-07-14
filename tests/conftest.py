@@ -33,6 +33,8 @@ async def client(tmp_path, monkeypatch) -> AsyncIterator[httpx.AsyncClient]:
     test_registry.register(MockProvider(), priority=10)
     monkeypatch.setattr(app.state, "provider_registry", test_registry)
     await app.state.search_rate_limiter.reset()
+    await app.state.metadata_rate_limiter.reset()
+    await app.state.metadata_result_store.reset()
 
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as test_client:

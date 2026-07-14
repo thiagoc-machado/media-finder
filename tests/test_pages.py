@@ -29,3 +29,14 @@ async def test_static_assets_are_local(client):
     assert (static_root / "css/app.css").is_file()
     assert (static_root / "js/app.js").is_file()
     assert (static_root / "vendor/htmx.min.js").is_file()
+
+
+async def test_home_keeps_simple_mode_and_hides_advanced_filters_by_default(client):
+    response = await client.get("/")
+
+    assert response.status_code == 200
+    assert "Modo simples" in response.text
+    assert "PT-BR 1080p" in response.text
+    assert "Advanced filters" in response.text
+    assert 'class="advanced-options-panel"' in response.text
+    assert 'class="advanced-filter-options"' in response.text

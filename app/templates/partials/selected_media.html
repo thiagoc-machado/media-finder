@@ -1,0 +1,23 @@
+{% if metadata_error %}
+  <div class="metadata-error" role="alert">{{ metadata_error }}</div>
+{% else %}
+  <article class="selected-media" aria-label="Mídia selecionada">
+    <div class="selected-media-heading">
+      {% if resolved_media.poster_url %}<img src="{{ resolved_media.poster_url }}" alt="Pôster de {{ resolved_media.title }}" loading="lazy">{% else %}<div class="metadata-placeholder">MF</div>{% endif %}
+      <div>
+        <p class="section-kicker">Mídia selecionada · {{ resolved_media.media_type }}</p>
+        <h2>{{ resolved_media.title }}{% if resolved_media.year %} <span>({{ resolved_media.year }})</span>{% endif %}</h2>
+        {% if resolved_media.original_title and resolved_media.original_title != resolved_media.title %}<p class="media-original-title">{{ resolved_media.original_title }}</p>{% endif %}
+        <p class="metadata-imdb">IMDb: <strong>{{ resolved_media.imdb_id }}</strong></p>
+      </div>
+    </div>
+    <p class="media-overview">{{ resolved_media.overview or "Sem sinopse disponível." }}</p>
+    <button class="text-button" type="button" onclick="history.back()">← Voltar aos candidatos</button>
+    {% if resolved_media.media_type == "movie" %}
+      {% include "partials/resolved_release_form.html" %}
+    {% else %}
+      {% include "partials/season_list.html" %}
+      <div id="metadata-episodes" class="metadata-episodes-target" aria-live="polite"><p class="muted">Selecione uma temporada para ver os episódios.</p></div>
+    {% endif %}
+  </article>
+{% endif %}

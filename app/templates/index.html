@@ -23,17 +23,27 @@
     </div>
   </section>
 
-  <section class="search-panel search-panel-functional" aria-labelledby="search-heading">
+  <section class="search-panel search-panel-functional metadata-search-panel" aria-labelledby="metadata-search-heading">
     <div class="panel-heading">
       <div>
-        <p class="section-kicker">Workspace</p>
-        <h2 id="search-heading">Comece uma busca</h2>
+        <p class="section-kicker">Modo simples</p>
+        <h2 id="metadata-search-heading">Comece uma busca por mídia</h2>
       </div>
-      <span class="phase-chip">Providers reais + mock</span>
+      <span class="phase-chip">TMDB → IMDb → releases</span>
     </div>
-    <div id="search-form-errors" class="form-error{% if not form_error %} is-hidden{% endif %}" role="alert">{{ form_error or "" }}</div>
-    {% include "partials/search_form.html" %}
+    {% include "partials/metadata_search_form.html" %}
+    <div id="metadata-candidates" class="metadata-candidates-target" aria-live="polite"></div>
+    <div id="metadata-detail" class="metadata-detail-target" aria-live="polite"></div>
   </section>
+
+  <details class="advanced-search-panel">
+    <summary><span><span class="section-kicker">Modo avançado</span><strong>Buscar diretamente nos providers</strong></span><span class="summary-chevron">⌄</span></summary>
+    <section class="search-panel search-panel-functional" aria-labelledby="search-heading">
+      <div class="panel-heading"><div><p class="section-kicker">Workspace</p><h2 id="search-heading">Busca manual</h2></div><span class="phase-chip">IMDb opcional</span></div>
+      <div id="search-form-errors" class="form-error{% if not form_error %} is-hidden{% endif %}" role="alert">{{ form_error or "" }}</div>
+      {% include "partials/search_form.html" %}
+    </section>
+  </details>
 
   <section id="search-results" aria-live="polite" aria-atomic="true">
     {% if processed is defined %}

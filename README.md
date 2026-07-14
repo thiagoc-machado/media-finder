@@ -1,6 +1,6 @@
 # Media Finder
 
-Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário, comparar resultados e enviar torrents ao qBittorrent. Esta entrega implementa as **Fases 1 a 7**: fundação, contrato de providers, processamento de domínio, interface de busca, integração real com qBittorrent, providers Prowlarr/Jackett e addons Stremio Torrentio/MediaFusion.
+Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário, comparar resultados e enviar torrents ao qBittorrent. Esta entrega fecha o MVP nas **Fases 1 a 9**: catálogo TMDB, resolução de IMDb, busca concorrente em providers, filtros, deduplicação, qBittorrent e histórico.
 
 ## O que está pronto
 
@@ -30,15 +30,17 @@ Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário,
 - Integrações reais opcionais com Prowlarr e Jackett, usando APIs oficiais, indexadores selecionáveis, cache curto, rate limit, timeouts e normalização comum.
 - Integrações opcionais com addons Stremio Torrentio e MediaFusion por manifest e stream resources, com cliente genérico, limites de resposta, redirects revalidados, proteção SSRF, cache, concorrência e status seguro.
 - Resultados Stremio normalizados para o contrato comum; magnet/hash podem ir para qBittorrent, enquanto streaming HTTP, fontes externas e streams não acionáveis ficam identificados sem download.
+- Subfase 8.1: cliente TMDB assíncrono com autenticação Bearer/API key explícita, cache em memória, schemas normalizados, busca multi, detalhes, external IDs, temporadas e partials HTMX.
+- Fase 9: estabilização do fluxo completo, presets simples, filtros avançados recolhíveis, validação de categorias antes do envio, status manual e documentação final do MVP.
 - Categorias configuráveis somente para `movie → movies` e `series → series`; `anime` e `other` permanecem desabilitados.
 - POST `/downloads` protegido por CSRF e baseado exclusivamente em token temporário server-side.
 - Histórico paginado de downloads, refresh de status e endpoints de health/categorias do qBittorrent.
 - Testes unitários e HTTP para registry, schemas, mock, pipeline, templates, segurança e histórico.
 - Testes e configuração do Ruff.
 
-Sonarr, Radarr, Comet, AIOStreams e scraping HTML continuam fora do escopo. A Fase 7 não adiciona Debrid, bibliotecas Jellyfin, automação Sonarr/Radarr, scraping HTML ou novos containers.
+Radarr e Sonarr não possuem clientes ou cadastro automático: reconhecem downloads somente pelas categorias `movies` e `series` quando a mídia correspondente já está monitorada. Cinemeta, Debrid, streaming HTTP, scraping HTML e novos containers continuam fora do escopo.
 
-## Arquitetura das Fases 1 a 7
+## Arquitetura do MVP (Fases 1 a 9)
 
 ```text
 Browser
@@ -201,6 +203,31 @@ As rotas de observabilidade são `GET /providers/torrentio/status`, `GET /provid
 
 Quando Torrentio/MediaFusion e Prowlarr/Jackett retornam o mesmo hash, a deduplicação mantém todos os providers, trackers únicos, o maior número conhecido de seeders e a capability mais forte, nesta ordem: `magnet`, `info_hash`, `http_stream`, `external`, `unsupported`.
 
+## Subfase 8: catálogo TMDB e resolução guiada
+
+O catálogo TMDB desta entrega é uma camada de resolução independente da busca de releases. As rotas são:
+
+| Rota | Uso |
+| --- | --- |
+| `GET /metadata/search?query=...&media_type=all` | Busca candidatos de filmes e séries em partial HTMX |
+| `GET /metadata/select/{candidate_token}` | Seleciona um candidato temporário e resolve o IMDb ID no backend |
+| `GET /metadata/series/{resolved_token}/season/{season_number}` | Lista episódios de uma temporada resolvida |
+| `GET /search/resolved?resolved_media_token=...` | Executa a busca existente com título, TMDB ID, IMDb ID e episódio validados |
+| `GET /metadata/tmdb/health` | Health leve de autenticação/configuração, sem busca ampla |
+| `GET /metadata/tmdb/movie/{tmdb_id}` | Detalhes de filme e external IDs |
+| `GET /metadata/tmdb/series/{tmdb_id}` | Detalhes de série e temporadas |
+| `GET /metadata/tmdb/{tmdb_id}/season/{season_number}` | Episódios normalizados de uma temporada |
+
+`TMDB_AUTH_MODE=bearer` envia a credencial somente no header `Authorization`; `TMDB_AUTH_MODE=api_key` envia o parâmetro oficial `api_key`. A chave nunca é colocada no frontend, logs, SQLite ou mensagens de erro. HTTPS é obrigatório por padrão; HTTP exige `TMDB_ALLOW_HTTP=true` ou ambiente de teste.
+
+Resultados `person` e adultos são descartados. Textos são limpos e limitados, datas inválidas tornam-se `None`, candidatos mantêm a ordem de relevância e imagens são construídas exclusivamente de `TMDB_IMAGE_BASE_URL` mais paths TMDB validados. Não há proxy de imagens nem URLs arbitrárias.
+
+No modo simples, o navegador envia apenas o texto para o TMDB e, depois da seleção, um token temporário de candidato. O backend consulta novamente detalhes e external IDs, exige um IMDb no formato `tt` seguido de 7 a 10 dígitos e guarda o objeto resolvido somente em memória. Tokens têm TTL, namespaces separados, limite de itens e cópia defensiva; reiniciar o container limpa esse estado.
+
+Filmes seguem diretamente para os releases. Séries exibem somente temporadas válidas e consultam os episódios no TMDB antes de aceitar a busca. `METADATA_SHOW_SPECIALS=false` oculta a season 0 por padrão; habilite explicitamente apenas quando desejar incluir specials. A busca avançada manual continua disponível e mantém o suporte a IMDb, temporada, episódio, providers, filtros, scoring, deduplicação e ordenação.
+
+O histórico registra a resolução de forma limitada em `filters_json` (`resolved_media`, título, TMDB ID, IMDb ID e, quando aplicável, temporada/episódio), sem tokens, chave da API ou payload bruto. Cinemeta, fallback de metadados e novos providers permanecem fora do MVP.
+
 ## Interface de busca
 
 As rotas públicas da Fase 4 são:
@@ -214,7 +241,7 @@ As rotas públicas da Fase 4 são:
 
 O formulário envia `query`, providers repetidos, filtros, `sort_by` e `weak_deduplication` por `GET`. Filtros vazios não restringem a busca. Temporada e episódio só são aceitos para séries e anime.
 
-O resultado usa tabela no desktop e cards no celular. O endpoint retorna métricas de brutos, normalizados, deduplicados e filtrados, além dos erros parciais dos providers. O detalhe usa HTMX e mostra hash/magnet abreviados; o magnet completo e `raw_data` nunca são renderizados.
+O resultado usa tabela no desktop e cards no celular. O endpoint retorna métricas de brutos, normalizados, deduplicados e filtrados, além dos erros parciais dos providers. O detalhe usa HTMX e mostra hash/magnet abreviados; o magnet completo e `raw_data` nunca são renderizados. Idioma, qualidade, tamanho máximo, seeders mínimos, ordenação e providers ficam no primeiro nível; codec, source type, tracker, termos, deduplicação fraca e indexadores ficam em `Advanced filters`. Os presets `PT-BR 1080p`, `Castellano 1080p` e `Best available` apenas preenchem os filtros no navegador.
 
 ### Tokens e histórico
 
@@ -291,6 +318,24 @@ Principais variáveis:
 | `PROVIDER_RATE_LIMIT_REQUESTS` | `20` | Chamadas por provider na janela |
 | `PROVIDER_RATE_LIMIT_WINDOW_SECONDS` | `60` | Janela do rate limit de providers |
 | `PROVIDER_CACHE_MAX_ITEMS` | `512` | Máximo de resultados normalizados em cada cache |
+| `TMDB_ENABLED` | `true` | Habilita o catálogo TMDB; sem chave fica indisponível sem impedir o boot |
+| `TMDB_AUTH_MODE` | `bearer` | `bearer` ou `api_key` |
+| `TMDB_BASE_URL` | `https://api.themoviedb.org/3` | Origem da API TMDB |
+| `TMDB_IMAGE_BASE_URL` | `https://image.tmdb.org/t/p` | Origem configurada para imagens TMDB |
+| `TMDB_LANGUAGE` | `pt-BR` | Idioma solicitado ao TMDB |
+| `TMDB_REGION` | `ES` | Região solicitada ao TMDB |
+| `TMDB_TIMEOUT_SECONDS` | `10` | Timeout das chamadas TMDB |
+| `TMDB_CACHE_TTL_SECONDS` | `3600` | TTL do cache TMDB |
+| `TMDB_MAX_RESULTS` | `20` | Limite de candidatos |
+| `TMDB_MAX_CONCURRENCY` | `3` | Concorrência máxima TMDB |
+| `TMDB_ALLOW_HTTP` | `false` | Exceção explícita para testes/ambientes controlados |
+| `METADATA_SEARCH_MIN_LENGTH` | `2` | Tamanho mínimo do título |
+| `METADATA_SEARCH_MAX_LENGTH` | `200` | Tamanho máximo do título |
+| `METADATA_RESULT_STORE_MAX_ITEMS` | `1000` | Limite de cache de metadados |
+| `METADATA_RESULT_TOKEN_TTL_SECONDS` | `900` | TTL dos tokens temporários de candidatos e mídia resolvida |
+| `METADATA_RATE_LIMIT_REQUESTS` | `30` | Chamadas de metadata por janela |
+| `METADATA_RATE_LIMIT_WINDOW_SECONDS` | `60` | Janela do rate limit de metadata |
+| `METADATA_SHOW_SPECIALS` | `false` | Inclui explicitamente a season 0 no fluxo de séries |
 | `APP_SECRET_KEY` | obrigatório em produção | Chave da sessão/CSRF; gere com `openssl rand -hex 32` |
 | `QBITTORRENT_URL` | `http://qbittorrent:8080` | Endpoint do qBittorrent |
 | `QBITTORRENT_CATEGORY_MOVIE` | `movies` | Categoria usada por filmes |
@@ -300,8 +345,6 @@ Principais variáveis:
 | `QBITTORRENT_CONNECT_TIMEOUT_SECONDS` | `5` | Timeout de conexão/autenticação |
 | `QBITTORRENT_OPERATION_TIMEOUT_SECONDS` | `15` | Timeout das operações |
 | `QBITTORRENT_HEALTH_TIMEOUT_SECONDS` | `5` | Timeout do health |
-| `SONARR_URL` | `http://sonarr:8989` | Endpoint futuro do Sonarr |
-| `RADARR_URL` | `http://radarr:7878` | Endpoint futuro do Radarr |
 | `PROWLARR_ENABLED` | `true` | Registra o Prowlarr no registry |
 | `PROWLARR_URL` | `http://prowlarr:9696` | Endpoint HTTP do Prowlarr |
 | `PROWLARR_API_KEY` | vazio | Chave enviada somente no header `X-Api-Key` |
@@ -317,9 +360,8 @@ Principais variáveis:
 | `JACKETT_CACHE_TTL_SECONDS` | `60` | TTL do cache Jackett |
 | `JACKETT_MAX_CONCURRENCY` | `3` | Concorrência máxima Jackett |
 | `JACKETT_INDEXERS` | `all` | Agregador ou lista de indexadores separados por vírgula |
-| `TORRENT_INDEXER_URL` | `http://torrent-indexer:7006` | Endpoint futuro do indexador local |
 
-As API keys e credenciais devem ser fornecidas pelo ambiente, nunca pelo código-fonte.
+As API keys e credenciais devem ser fornecidas pelo ambiente, nunca pelo código-fonte. O `.env.example` contém somente placeholders; variáveis legadas de Cinemeta, Sonarr, Radarr e indexador local não fazem parte do contrato do MVP.
 
 ## Desenvolvimento sem Docker
 
@@ -352,7 +394,26 @@ cp /opt/appdata/media-finder/media-finder.db /opt/appdata/media-finder/media-fin
 docker compose start media-finder
 ```
 
-O modo WAL e o backup online serão tratados na fase de robustez/observabilidade, antes da entrega final.
+Para atualizar, faça backup do arquivo SQLite, baixe as alterações e recrie somente o serviço:
+
+```bash
+docker compose stop media-finder
+cp /opt/appdata/media-finder/media-finder.db /opt/appdata/media-finder/media-finder.db.backup
+docker compose build media-finder
+docker compose up -d media-finder
+```
+
+O entrypoint executa as migrations antes do boot. Em caso de falha, consulte `docker compose logs media-finder`, confirme a permissão UID/GID 1000:1000 em `/config` e verifique `/health`.
+
+## Fechamento do MVP
+
+Media Finder sends torrents to qBittorrent. Radarr and Sonarr only import them automatically when the corresponding media is already monitored.
+
+O fluxo fechado é: título → TMDB → IMDb → providers → filtros/deduplicação → resultado elegível → qBittorrent → histórico/status. Filmes usam `movies`; séries usam `series`. O botão de download é desabilitado quando a categoria não existe, qBittorrent está indisponível ou o resultado não possui magnet/hash.
+
+Na validação local final, migrations, SQLite, `/health`, healthcheck, UID/GID e ausência de secrets nos logs passaram; o container consumiu aproximadamente 65 MiB em idle. Os providers externos não estavam executando neste workspace, portanto a validação real de Torrentio, MediaFusion, Prowlarr, Jackett e qBittorrent deve ser repetida no Compose do home server.
+
+O MVP não adiciona clientes Radarr/Sonarr, não cadastra mídia, não move arquivos e não altera categorias. Também não implementa Cinemeta, Debrid, streaming HTTP, autenticação avançada, Redis, Celery, PostgreSQL, frontend separado ou novos containers.
 
 ## Qualidade
 
@@ -364,12 +425,11 @@ pytest
 
 ## Limitações desta fase
 
-- O armazenamento de tokens e o rate limit são locais ao processo; múltiplas réplicas exigirão uma camada compartilhada futura.
-- Prowlarr e Jackett dependem de instâncias e indexadores configurados pelo usuário; testes reais são somente de leitura.
-- A integração é somente com qBittorrent; Sonarr e Radarr ainda não foram implementados.
-- Não há automação de importação nem integrações Sonarr/Radarr/Jellyfin.
+- O armazenamento de tokens e o rate limit são locais ao processo; múltiplas réplicas exigiriam uma camada compartilhada.
+- Prowlarr, Jackett, Torrentio e MediaFusion dependem de instâncias/manifests configurados pelo usuário.
+- A integração com Radarr/Sonarr é indireta, por categoria e monitoramento existente.
 - Não há pause/resume/delete de torrents, alteração de categoria ou remoção de arquivos.
-- Torrentio e MediaFusion estão limitados ao contrato Stremio descrito acima; continuam fora do escopo Debrid, Arr, Jellyfin, scraping e automação de biblioteca.
+- Torrentio e MediaFusion estão limitados ao contrato Stremio descrito acima; Debrid e streaming HTTP não são downloads qBittorrent.
 
 ## Uso autorizado
 

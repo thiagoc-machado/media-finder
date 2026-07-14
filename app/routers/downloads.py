@@ -60,14 +60,24 @@ async def create_download(
     if media_type not in {"movie", "series", "anime", "other"}:
         return _feedback(request, "failed", "Unsupported media type", category=category, http_status=400)
     if not service.get_category_for_media_type(media_type):
-        return _feedback(
-            request,
-            "failed",
+        outcome = _failed_outcome(
+            parsed.info_hash,
+            category,
             "No qBittorrent category is configured for this media type.",
-            category=category,
-            info_hash=parsed.info_hash,
-            http_status=400,
         )
+        row = _save_history(db, result, parsed.info_hash, category, outcome)
+        return _feedback_from_outcome(request, outcome, row, http_status=400)
+
+    try:
+        categories = await service.list_categories()
+    except (QBitTorrentAuthenticationError, QBitTorrentTimeoutError, QBitTorrentUnavailableError) as exc:
+        outcome = _failed_outcome(parsed.info_hash, category, _safe_exception_message(exc))
+        row = _save_history(db, result, parsed.info_hash, category, outcome)
+        return _feedback_from_outcome(request, outcome, row)
+    if category.casefold() not in {name.casefold() for name in categories}:
+        outcome = _failed_outcome(parsed.info_hash, category, "Configured qBittorrent category was not found")
+        row = _save_history(db, result, parsed.info_hash, category, outcome)
+        return _feedback_from_outcome(request, outcome, row)
 
     existing = _find_history_by_hash(db, parsed.info_hash)
     try:
@@ -234,7 +244,7 @@ def _failed_outcome(info_hash: str, category: str, message: str):
     return AddTorrentResult(status="failed", info_hash=info_hash, category=category, message=message)
 
 
-def _feedback_from_outcome(request: Request, outcome, row: DownloadHistory):
+def _feedback_from_outcome(request: Request, outcome, row: DownloadHistory, *, http_status: int = 200):
     return _feedback(
         request,
         outcome.status,
@@ -242,6 +252,7 @@ def _feedback_from_outcome(request: Request, outcome, row: DownloadHistory):
         category=outcome.category,
         info_hash=outcome.info_hash,
         download_id=row.id,
+        http_status=http_status,
     )
 
 

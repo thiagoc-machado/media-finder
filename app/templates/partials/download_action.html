@@ -13,4 +13,7 @@
   </form>
   <span class="download-reason" data-download-reason>Checking qBittorrent…</span>
   <div id="download-feedback-{{ view.result_token }}" class="download-feedback" aria-live="polite"></div>
+  {% if download_media_type in ['movie', 'series'] %}
+    <p class="arr-import-note">Radarr/Sonarr will only import this download automatically if the media is already monitored.</p>
+  {% endif %}
 </div>

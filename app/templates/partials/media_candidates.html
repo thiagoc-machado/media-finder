@@ -1,0 +1,16 @@
+{% if metadata_error %}
+  <div class="metadata-error" role="alert">{{ metadata_error }}</div>
+{% elif metadata_errors %}
+  <div class="metadata-error" role="alert">
+    <strong>Não foi possível consultar o catálogo.</strong>
+    {% for error in metadata_errors %}<span>{{ error.provider }}: {{ error.message }}</span>{% endfor %}
+  </div>
+{% elif not metadata_candidates %}
+  <div class="metadata-empty"><strong>Nenhuma mídia encontrada.</strong><span>Tente outro título.</span></div>
+{% else %}
+  <section class="metadata-candidates" aria-label="Candidatos de mídia">
+    {% for view in metadata_candidates %}
+      {% include "partials/media_candidate_card.html" %}
+    {% endfor %}
+  </section>
+{% endif %}

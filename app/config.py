@@ -2,6 +2,7 @@
 
 import re
 from functools import lru_cache
+from typing import Literal
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field, field_validator
@@ -69,6 +70,27 @@ class Settings(BaseSettings):
     provider_rate_limit_window_seconds: int = Field(default=60, ge=1, le=86_400)
     provider_cache_max_items: int = Field(default=512, ge=1, le=10_000)
 
+    tmdb_enabled: bool = True
+    tmdb_api_key: str = ""
+    tmdb_auth_mode: Literal["bearer", "api_key"] = "bearer"
+    tmdb_allow_http: bool = False
+    tmdb_base_url: str = "https://api.themoviedb.org/3"
+    tmdb_image_base_url: str = "https://image.tmdb.org/t/p"
+    tmdb_language: str = "pt-BR"
+    tmdb_region: str = "ES"
+    tmdb_timeout_seconds: float = Field(default=10, ge=1, le=120)
+    tmdb_cache_ttl_seconds: int = Field(default=3600, ge=0, le=86_400)
+    tmdb_max_results: int = Field(default=20, ge=1, le=100)
+    tmdb_max_concurrency: int = Field(default=3, ge=1, le=32)
+
+    metadata_search_min_length: int = Field(default=2, ge=1, le=20)
+    metadata_search_max_length: int = Field(default=200, ge=20, le=500)
+    metadata_result_token_ttl_seconds: int = Field(default=900, ge=0, le=86_400)
+    metadata_result_store_max_items: int = Field(default=1000, ge=1, le=10_000)
+    metadata_rate_limit_requests: int = Field(default=30, ge=1, le=1000)
+    metadata_rate_limit_window_seconds: int = Field(default=60, ge=1, le=86_400)
+    metadata_show_specials: bool = False
+
     qbittorrent_url: str = "http://qbittorrent:8080"
     qbittorrent_username: str = ""
     qbittorrent_password: str = ""
@@ -79,12 +101,6 @@ class Settings(BaseSettings):
     qbittorrent_connect_timeout_seconds: float = Field(default=5, gt=0)
     qbittorrent_operation_timeout_seconds: float = Field(default=15, gt=0)
     qbittorrent_health_timeout_seconds: float = Field(default=5, gt=0)
-
-    sonarr_url: str = "http://sonarr:8989"
-    sonarr_api_key: str = ""
-
-    radarr_url: str = "http://radarr:7878"
-    radarr_api_key: str = ""
 
     prowlarr_url: str = "http://prowlarr:9696"
     prowlarr_api_key: str = ""
@@ -122,8 +138,6 @@ class Settings(BaseSettings):
     stremio_addon_allowed_schemes: str = "http,https"
     stremio_addon_allow_private_hosts: bool = False
 
-    torrent_indexer_url: str = "http://torrent-indexer:7006"
-
     @field_validator(
         "qbittorrent_category_movie",
         "qbittorrent_category_series",
@@ -151,6 +165,14 @@ class Settings(BaseSettings):
         if parsed.username or parsed.password or parsed.fragment or parsed.query:
             raise ValueError("Provider URL cannot contain credentials, query parameters or fragments")
         return normalized
+
+    @field_validator("tmdb_base_url", "tmdb_image_base_url", mode="before")
+    @classmethod
+    def validate_tmdb_url(cls, value: str, info) -> str:
+        """Require HTTPS for TMDB endpoints unless HTTP is explicitly allowed."""
+
+        allow_http = bool(info.data.get("tmdb_allow_http")) or info.data.get("app_env", "").casefold() == "test"
+        return _validate_metadata_url(value, allow_http, "TMDB")
 
     @field_validator("torrentio_manifest_url", "mediafusion_manifest_url", mode="before")
     @classmethod
@@ -250,3 +272,22 @@ def get_settings() -> Settings:
     """Return the cached application settings."""
 
     return Settings()
+
+
+def _validate_metadata_url(value: str, allow_http: bool, label: str) -> str:
+    """Validate an external metadata origin without credentials or URL data."""
+
+    if not isinstance(value, str) or any(ord(char) < 32 or ord(char) == 127 for char in value):
+        raise ValueError(f"{label} URL is invalid")
+    normalized = value.strip().rstrip("/")
+    try:
+        parsed = urlsplit(normalized)
+        parsed.port
+    except ValueError as exc:
+        raise ValueError(f"{label} URL is invalid") from exc
+    allowed = {"https", "http"} if allow_http else {"https"}
+    if parsed.scheme.casefold() not in allowed or not parsed.hostname:
+        raise ValueError(f"{label} URL must use https by default")
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise ValueError(f"{label} URL cannot contain credentials, query parameters or fragments")
+    return normalized

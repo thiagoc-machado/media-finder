@@ -128,8 +128,12 @@ async def test_duplicate_ambiguous_and_missing_categories(monkeypatch):
     with pytest.raises(CategoryNotFoundError):
         await missing.add_torrent(f"magnet:?xt=urn:btih:{HASH}", "movie", "mock")
 
+    unconfigured = QBitTorrentService(
+        settings(qbittorrent_category_anime=None),
+        client_factory=lambda **kwargs: duplicate_client,
+    )
     with pytest.raises(CategoryNotConfiguredError):
-        await duplicate.add_torrent(f"magnet:?xt=urn:btih:{HASH}", "anime", "mock")
+        await unconfigured.add_torrent(f"magnet:?xt=urn:btih:{HASH}", "anime", "mock")
 
 
 async def test_authentication_failure_and_operation_timeout(monkeypatch):

@@ -1,0 +1,14 @@
+<section class="metadata-episodes" aria-label="Episódios da temporada">
+  <h3>{{ season.name or "Temporada" }} · {{ season.season_number }}</h3>
+  {% if season.episodes %}
+    <div class="episode-choice-list">
+      {% for view in episode_views %}
+        <article class="episode-choice">
+          <div><strong>{{ view.episode.episode_number }}. {{ view.episode.name or "Sem título" }}</strong>{% if view.episode.air_date %}<span>{{ view.episode.air_date }}</span>{% endif %}{% if view.episode.runtime_minutes %}<span>{{ view.episode.runtime_minutes }} min</span>{% endif %}<p>{{ view.episode.overview or "Sem sinopse disponível." }}</p></div>
+          {% set selected_episode = view.episode.episode_number %}
+          {% include "partials/resolved_release_form.html" %}
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}<p class="muted">Nenhum episódio encontrado.</p>{% endif %}
+</section>

@@ -1,0 +1,24 @@
+<article class="media-candidate-card">
+  <div class="media-candidate-poster">
+    {% if view.poster_url %}
+      <img src="{{ view.poster_url }}" alt="Pôster de {{ view.candidate.title }}" loading="lazy">
+    {% else %}
+      <span aria-label="Pôster indisponível">MF</span>
+    {% endif %}
+  </div>
+  <div class="media-candidate-copy">
+    <p class="card-label">{{ view.candidate.media_type }} · TMDB</p>
+    <h3>{{ view.candidate.title }}{% if view.candidate.year %} <span>({{ view.candidate.year }})</span>{% endif %}</h3>
+    {% if view.candidate.original_title and view.candidate.original_title != view.candidate.title %}
+      <p class="media-original-title">{{ view.candidate.original_title }}</p>
+    {% endif %}
+    <p class="media-overview">{{ view.candidate.overview or "Sem sinopse disponível." }}</p>
+    <div class="media-candidate-meta">
+      {% if view.candidate.vote_average is not none %}<span>★ {{ "%.1f"|format(view.candidate.vote_average) }}</span>{% endif %}
+      {% if view.candidate.original_language %}<span>{{ view.candidate.original_language }}</span>{% endif %}
+    </div>
+    <a class="button button-small" href="/metadata/select/{{ view.candidate_token }}"
+       hx-get="/metadata/select/{{ view.candidate_token }}"
+       hx-target="#metadata-detail" hx-swap="innerHTML">Selecionar</a>
+  </div>
+</article>

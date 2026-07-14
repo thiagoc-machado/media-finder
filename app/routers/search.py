@@ -15,6 +15,7 @@ from app.dependencies import database_session
 from app.models.search_history import SearchHistory
 from app.providers.registry import ProviderNotFoundError, ProviderRegistry
 from app.routers.pages import build_page_context, form_state_from_params
+from app.schemas.metadata import ResolvedMedia
 from app.schemas.provider import ProcessedSearchResult
 from app.schemas.web import SearchQueryParams
 from app.services.pipeline_service import process_search_results
@@ -54,17 +55,7 @@ async def search(
         return _search_error_response(request, db, message, status_code=400)
 
     try:
-        execution = await SearchService(
-            request.app.state.provider_registry,
-            default_timeout=settings.search_provider_timeout_seconds,
-        ).search(params.to_search_request(), params.providers or None)
-        processed = await process_search_results(
-            execution,
-            filters,
-            ScoringPreferences(),
-            params.sort_by,
-            allow_weak_dedup=params.weak_deduplication,
-        )
+        execution, processed = await _execute_search(request, params, filters, settings)
         await _record_history(db, params, filters, processed, execution.providers_requested)
         tokens = await request.app.state.result_store.save_many(processed.results)
         result_views = [
@@ -102,6 +93,78 @@ async def search(
             form_state=form_state_from_params(params),
             result_context=result_context,
         ),
+    )
+
+
+@router.get("/resolved", name="resolved_search")
+async def resolved_search(
+    request: Request,
+    db: Session = Depends(database_session),
+):
+    """Search existing providers using only trusted resolved-media state."""
+
+    settings = get_settings()
+    limiter = request.app.state.search_rate_limiter
+    client_key = request.client.host if request.client else "unknown"
+    if not await limiter.allow(client_key):
+        return _search_error_response(
+            request,
+            db,
+            "Muitas buscas em pouco tempo. Aguarde um minuto e tente novamente.",
+            status_code=429,
+        )
+    token = request.query_params.get("resolved_media_token", "")
+    resolved = await request.app.state.metadata_result_store.get_resolved(token)
+    if resolved is None:
+        return _search_error_response(request, db, "A mídia selecionada expirou. Escolha-a novamente.", status_code=404)
+    try:
+        params = _parse_resolved_params(request, resolved, settings)
+        filters = params.to_filters()
+        _validate_providers(params, request.app.state.provider_registry, settings.search_max_providers)
+        if resolved.media_type == "series":
+            await request.app.state.metadata_service.validate_episode(resolved, params.season or 0, params.episode or 0)
+        execution, processed = await _execute_search(request, params, filters, settings, resolved=resolved)
+        await _record_history(
+            db,
+            params,
+            filters,
+            processed,
+            execution.providers_requested,
+            resolved=resolved,
+        )
+        tokens = await request.app.state.result_store.save_many(processed.results)
+        result_views = [
+            {"result": result, "result_token": result_token}
+            for result, result_token in zip(processed.results, tokens, strict=True)
+        ]
+    except (ValidationError, ValueError, ProviderNotFoundError) as exc:
+        return _search_error_response(request, db, _friendly_validation_error(exc), status_code=400)
+    except Exception:
+        logger.exception("Resolved search request failed")
+        return _search_error_response(
+            request,
+            db,
+            "Não foi possível concluir a busca agora. Tente novamente.",
+            status_code=500,
+        )
+    result_context = {
+        "processed": processed,
+        "result_views": result_views,
+        "search_query": resolved.title,
+        "search_params": form_state_from_params(params),
+        "providers_requested": execution.providers_requested,
+        "providers_succeeded": execution.providers_succeeded,
+    }
+    if _is_htmx(request):
+        return templates.TemplateResponse(
+            request=request,
+            name="partials/results_table.html",
+            context={**build_page_context(request, db), **result_context},
+        )
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context=build_page_context(request, db, result_context=result_context),
     )
 
 
@@ -172,12 +235,7 @@ def _parse_query_params(request: Request, settings) -> SearchQueryParams:
         "source_types",
         "trackers",
     }
-    values: dict[str, object] = {}
-    for key in request.query_params.keys():
-        if key in list_fields:
-            values[key] = request.query_params.getlist(key)
-        else:
-            values[key] = request.query_params.get(key)
+    values = _collect_query_values(request, list_fields)
     if "q" in values:
         values.setdefault("query", values["q"])
         values.pop("q")
@@ -187,6 +245,81 @@ def _parse_query_params(request: Request, settings) -> SearchQueryParams:
     if len(params.query) > settings.search_query_max_length:
         raise ValueError(f"A busca deve ter no máximo {settings.search_query_max_length} caracteres.")
     return params
+
+
+def _parse_resolved_params(request: Request, resolved: ResolvedMedia, settings) -> SearchQueryParams:
+    """Build provider parameters from the resolved token and safe filters only."""
+
+    list_fields = {
+        "providers",
+        "prowlarr_indexers",
+        "jackett_indexers",
+        "languages",
+        "qualities",
+        "codecs",
+        "source_types",
+        "trackers",
+    }
+    values = _collect_query_values(request, list_fields, excluded={"resolved_media_token"})
+    values.update({"query": resolved.title, "media_type": resolved.media_type, "imdb_id": resolved.imdb_id})
+    params = SearchQueryParams(**values)
+    if len(params.query) < settings.search_query_min_length:
+        raise ValueError(f"A busca deve ter pelo menos {settings.search_query_min_length} caracteres.")
+    if len(params.query) > settings.search_query_max_length:
+        raise ValueError(f"A busca deve ter no máximo {settings.search_query_max_length} caracteres.")
+    return params
+
+
+def _collect_query_values(
+    request: Request,
+    list_fields: set[str],
+    *,
+    excluded: set[str] | None = None,
+) -> dict[str, object]:
+    """Collect only known repeated query fields for either search mode."""
+
+    excluded = excluded or set()
+    values: dict[str, object] = {}
+    for key in request.query_params.keys():
+        if key in excluded:
+            continue
+        if key in list_fields:
+            values[key] = request.query_params.getlist(key)
+        else:
+            values[key] = request.query_params.get(key)
+    if "q" in values:
+        values.setdefault("query", values["q"])
+        values.pop("q")
+    return values
+
+
+async def _execute_search(
+    request: Request,
+    params: SearchQueryParams,
+    filters,
+    settings,
+    *,
+    resolved: ResolvedMedia | None = None,
+):
+    """Run the existing concurrent provider and processing pipeline."""
+
+    search_request = params.to_search_request()
+    if resolved is not None:
+        search_request = search_request.model_copy(
+            update={"tmdb_id": resolved.tmdb_id, "imdb_id": resolved.imdb_id, "query": resolved.title}
+        )
+    execution = await SearchService(
+        request.app.state.provider_registry,
+        default_timeout=settings.search_provider_timeout_seconds,
+    ).search(search_request, params.providers or None)
+    processed = await process_search_results(
+        execution,
+        filters,
+        ScoringPreferences(),
+        params.sort_by,
+        allow_weak_dedup=params.weak_deduplication,
+    )
+    return execution, processed
 
 
 def _validate_providers(params: SearchQueryParams, registry: ProviderRegistry, max_providers: int) -> None:
@@ -210,15 +343,26 @@ async def _record_history(
     filters,
     processed: ProcessedSearchResult,
     providers_requested: list[str],
+    *,
+    resolved: ResolvedMedia | None = None,
 ) -> None:
     """Persist only the safe metadata already defined by the initial schema."""
 
     providers = params.providers or providers_requested
+    filter_payload = filters.model_dump()
+    if resolved is not None:
+        filter_payload["resolved_media"] = {
+            "title": resolved.title,
+            "tmdb_id": resolved.tmdb_id,
+            "imdb_id": resolved.imdb_id,
+            "season": params.season,
+            "episode": params.episode,
+        }
     row = SearchHistory(
         query=params.query,
         media_type=params.media_type,
         providers_json=json.dumps(providers, ensure_ascii=False),
-        filters_json=json.dumps(filters.model_dump(), ensure_ascii=False, sort_keys=True),
+        filters_json=json.dumps(filter_payload, ensure_ascii=False, sort_keys=True),
         results_count=len(processed.results),
         duration_ms=round(processed.duration_ms),
     )

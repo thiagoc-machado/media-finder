@@ -55,31 +55,34 @@
     </div>
   </section>
 
-  <section class="indexer-section" aria-labelledby="indexers-heading">
-    <div class="subsection-heading">
-      <div><p class="section-kicker">Detalhamento</p><h3 id="indexers-heading">Indexadores</h3></div>
-      <span class="muted indexer-help">Opcional · “Todos” usa a configuração do provider</span>
-    </div>
-    <div class="indexer-panels">
-      {% for provider in providers if provider.slug in ['prowlarr', 'jackett'] %}
-        {% set field_name = provider.slug ~ '_indexers' %}
-        {% set selected_indexers = form_state[field_name] %}
-        <fieldset class="indexer-panel is-hidden" data-indexer-panel="{{ provider.slug }}"
-                  data-indexer-url="/providers/{{ provider.slug }}/indexers"
-                  data-selected-indexers="{{ selected_indexers|join(',') }}">
-          <legend>{{ provider.name }}</legend>
-          <div class="indexer-options" data-indexer-options>
-            <label class="indexer-check indexer-all-check">
-              <input type="checkbox" name="{{ field_name }}" value="all"
-                     {% if not selected_indexers or 'all' in selected_indexers %}checked{% endif %}>
-              <span>Todos os indexadores</span>
-            </label>
-            <span class="indexer-loading" data-indexer-loading>Selecione o provider para carregar</span>
-          </div>
-        </fieldset>
-      {% endfor %}
-    </div>
-  </section>
+  <details class="advanced-options-panel">
+    <summary><span><span class="section-kicker">Advanced filters</span><strong>Indexadores específicos</strong></span><span class="summary-chevron">⌄</span></summary>
+    <section class="indexer-section" aria-labelledby="indexers-heading">
+      <div class="subsection-heading">
+        <div><p class="section-kicker">Detalhamento</p><h3 id="indexers-heading">Indexadores</h3></div>
+        <span class="muted indexer-help">Opcional · “Todos” usa a configuração do provider</span>
+      </div>
+      <div class="indexer-panels">
+        {% for provider in providers if provider.slug in ['prowlarr', 'jackett'] %}
+          {% set field_name = provider.slug ~ '_indexers' %}
+          {% set selected_indexers = form_state[field_name] %}
+          <fieldset class="indexer-panel is-hidden" data-indexer-panel="{{ provider.slug }}"
+                    data-indexer-url="/providers/{{ provider.slug }}/indexers"
+                    data-selected-indexers="{{ selected_indexers|join(',') }}">
+            <legend>{{ provider.name }}</legend>
+            <div class="indexer-options" data-indexer-options>
+              <label class="indexer-check indexer-all-check">
+                <input type="checkbox" name="{{ field_name }}" value="all"
+                       {% if not selected_indexers or 'all' in selected_indexers %}checked{% endif %}>
+                <span>Todos os indexadores</span>
+              </label>
+              <span class="indexer-loading" data-indexer-loading>Selecione o provider para carregar</span>
+            </div>
+          </fieldset>
+        {% endfor %}
+      </div>
+    </section>
+  </details>
 
   <details class="filters-panel" open>
     <summary><span><span class="section-kicker">Filtros</span><strong>Ajuste os resultados</strong></span><span class="summary-chevron">⌄</span></summary>

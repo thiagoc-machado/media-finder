@@ -22,7 +22,7 @@ class SearchQueryParams(BaseModel):
     providers: list[str] = Field(default_factory=list, max_length=10)
     prowlarr_indexers: list[str] = Field(default_factory=list, max_length=50)
     jackett_indexers: list[str] = Field(default_factory=list, max_length=50)
-    season: int | None = Field(default=None, ge=1, le=1000)
+    season: int | None = Field(default=None, ge=0, le=1000)
     episode: int | None = Field(default=None, ge=1, le=1000)
     languages: list[str] = Field(default_factory=list, max_length=20)
     qualities: list[str] = Field(default_factory=list, max_length=20)

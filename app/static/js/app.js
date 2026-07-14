@@ -158,6 +158,29 @@
     });
   }
 
+  function applyFilterPreset(select) {
+    var form = select.closest("form");
+    if (!form) return;
+    var preset = select.value;
+    form.querySelectorAll("input[name='languages']").forEach(function (input) {
+      input.checked = (preset === "pt-br-1080p" && input.value === "PT-BR") ||
+        (preset === "castellano-1080p" && input.value === "Castellano");
+    });
+    form.querySelectorAll("input[name='qualities']").forEach(function (input) {
+      input.checked = (preset === "pt-br-1080p" || preset === "castellano-1080p") && input.value === "1080p";
+    });
+    if (preset === "best-available") {
+      var sort = form.querySelector("select[name='sort_by']");
+      var weak = form.querySelector("input[name='weak_deduplication']");
+      if (sort) sort.value = "score_desc";
+      if (weak) weak.checked = true;
+    }
+  }
+
+  document.body.addEventListener("change", function (event) {
+    if (event.target && event.target.matches("[data-filter-preset]")) applyFilterPreset(event.target);
+  });
+
   function setSearching(searching) {
     var submit = query("[data-search-submit]");
     var loading = query("#search-loading");
@@ -209,14 +232,10 @@
         var mediaType = control.getAttribute("data-media-type");
         var category = control.getAttribute("data-category");
         var capability = control.getAttribute("data-download-capability");
-        if (capability === "http_stream") {
-          setDownloadReason(control, "Streaming source, not downloadable by qBittorrent", false);
-        } else if (capability === "external") {
-          setDownloadReason(control, "External source", false);
-        } else if (capability === "unsupported") {
-          setDownloadReason(control, "Unsupported stream type", false);
+        if (capability === "http_stream" || capability === "external" || capability === "unsupported") {
+          setDownloadReason(control, "Not available for qBittorrent", false);
         } else if (control.getAttribute("data-has-valid-magnet") !== "true") {
-          setDownloadReason(control, "Invalid magnet", false);
+          setDownloadReason(control, "Not available for qBittorrent", false);
         } else if (!category || mediaType === "anime" || mediaType === "other") {
           setDownloadReason(control, "Category not configured", false);
         } else if (!health || health.available !== true) {

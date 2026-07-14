@@ -6,11 +6,11 @@
   <section class="page-heading">
     <p class="eyebrow"><span class="eyebrow-line"></span>Control room</p>
     <h1>Configurações</h1>
-    <p>Preferências, presets e integrações protegidas serão adicionados nas próximas fases.</p>
+    <p>O MVP usa as variáveis de ambiente do Compose e mantém o fluxo de busca e download enxuto.</p>
   </section>
   <section class="settings-preview">
     <div class="settings-row"><span class="settings-icon">◌</span><div><h2>Ambiente</h2><p>Execução atual: <strong>{{ app_env }}</strong></p></div><span class="setting-state">Ativo</span></div>
     <div class="settings-row"><span class="settings-icon">▦</span><div><h2>Persistência</h2><p>SQLite com migrations via Alembic</p></div><span class="setting-state">Ativo</span></div>
-    <div class="settings-row"><span class="settings-icon">⌘</span><div><h2>Integrações</h2><p>qBittorrent, Sonarr e Radarr prontos para configuração</p></div><span class="setting-state setting-state-muted">Próxima fase</span></div>
+    <div class="settings-row"><span class="settings-icon">⌘</span><div><h2>Integrações</h2><p>qBittorrent recebe os downloads; Radarr e Sonarr importam apenas mídia já monitorada.</p></div><span class="setting-state">Configurado por env</span></div>
   </section>
 {% endblock %}

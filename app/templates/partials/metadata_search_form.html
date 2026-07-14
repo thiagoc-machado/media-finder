@@ -1,0 +1,10 @@
+<form class="metadata-search-form" action="/metadata/search" method="get" hx-get="/metadata/search" hx-target="#metadata-candidates" hx-indicator="#metadata-search-loading">
+  <label class="search-input-wrap search-input-large">
+    <span class="sr-only">Título da mídia</span>
+    <span class="search-symbol" aria-hidden="true">⌕</span>
+    <input type="search" name="query" placeholder="Ex.: Interstellar, Breaking Bad" minlength="2" maxlength="200" autocomplete="off" required>
+  </label>
+  <label class="select-wrap"><span class="sr-only">Tipo de mídia</span><select name="media_type"><option value="all">Todos os tipos</option><option value="movie">Filmes</option><option value="series">Séries</option></select></label>
+  <button class="button button-primary" type="submit">Buscar mídia <span aria-hidden="true">→</span></button>
+  <span id="metadata-search-loading" class="search-loading htmx-indicator" role="status"><span class="spinner" aria-hidden="true"></span> Consultando TMDB…</span>
+</form>

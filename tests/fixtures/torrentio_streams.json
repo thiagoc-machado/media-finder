@@ -1,0 +1,13 @@
+{
+  "streams": [
+    {
+      "name": "Example Movie 1080p WEB-DL 1.5 GB seeders: 12",
+      "infoHash": "0123456789abcdef0123456789abcdef01234567",
+      "sources": [
+        "tracker:https://tracker.example/announce",
+        "dht:ignored"
+      ]
+    }
+  ],
+  "cacheMaxAge": 60
+}

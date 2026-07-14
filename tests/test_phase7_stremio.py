@@ -1,5 +1,8 @@
 """Offline contract tests for Stremio addon integrations."""
 
+import json
+from pathlib import Path
+
 import httpx
 import pytest
 
@@ -17,13 +20,15 @@ from app.utils.stremio_url import build_stremio_resource_url
 
 HASH = "0123456789abcdef0123456789abcdef01234567"
 MANIFEST_URL = "http://addon.test/config/manifest.json"
+FIXTURES = Path(__file__).parent / "fixtures"
 
 
 class FakeAddonHTTP:
     """Small response fixture that never performs network I/O."""
 
-    def __init__(self) -> None:
+    def __init__(self, provider: str = "torrentio") -> None:
         self.paths: list[str] = []
+        self.provider = provider
 
     async def get_response(self, path: str, *, params=None, headers=None):
         self.paths.append(path)
@@ -37,19 +42,8 @@ class FakeAddonHTTP:
                     "resources": [{"name": "stream", "types": ["movie", "series"]}],
                 },
             )
-        return httpx.Response(
-            200,
-            json={
-                "streams": [
-                    {
-                        "name": "1080p WEB-DL 1.5 GB seeders: 12",
-                        "infoHash": HASH,
-                        "sources": ["tracker:https://tracker.example/announce", "dht:good"],
-                    }
-                ],
-                "cacheMaxAge": 60,
-            },
-        )
+        fixture = "mediafusion_streams.json" if self.provider == "mediafusion" else "torrentio_streams.json"
+        return httpx.Response(200, json=json.loads((FIXTURES / fixture).read_text()))
 
     async def close(self) -> None:
         pass
@@ -132,7 +126,7 @@ async def test_torrentio_search_uses_imdb_id_and_mediafusion_rejects_anime():
     assert results[0].provider == "torrentio"
     assert fake.paths[-1].endswith("/stream/movie/tt1234567.json")
 
-    mediafusion = MediaFusionProvider(settings, http_client=FakeAddonHTTP())
+    mediafusion = MediaFusionProvider(settings, http_client=FakeAddonHTTP("mediafusion"))
     with pytest.raises(ProviderConfigurationError, match="does not support"):
         await mediafusion.search(SearchRequest(query="Anime", media_type="anime", imdb_id="tt1234567"))
 

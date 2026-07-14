@@ -15,6 +15,47 @@
 /* Phase 4 search workspace */
 .hero-grid-compact { min-height: 220px; }
 .search-panel-functional { margin-top: 42px; }
+.metadata-search-panel { margin-top: 0; }
+.metadata-search-form { align-items: center; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) 150px auto; }
+.metadata-search-form .search-loading { grid-column: 1 / -1; }
+.advanced-search-panel { margin-top: 18px; }
+.advanced-search-panel > summary { align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; color: var(--muted); cursor: pointer; display: flex; justify-content: space-between; list-style: none; padding: 14px 16px; }
+.advanced-search-panel > summary::-webkit-details-marker { display: none; }
+.advanced-search-panel[open] > summary { border-radius: 10px 10px 0 0; }
+.metadata-candidates, .metadata-detail-target { display: grid; gap: 12px; margin-top: 18px; }
+.media-candidate-card, .selected-media, .metadata-episodes { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.media-candidate-card { display: grid; gap: 16px; grid-template-columns: 86px minmax(0, 1fr); }
+.media-candidate-poster, .selected-media-heading img { background: var(--panel-soft); border-radius: 8px; min-height: 120px; overflow: hidden; }
+.media-candidate-poster img, .selected-media-heading img { height: 100%; object-fit: cover; width: 100%; }
+.media-candidate-poster span, .metadata-placeholder { align-items: center; color: var(--lime); display: flex; font-family: Georgia, serif; font-size: 22px; height: 120px; justify-content: center; }
+.media-candidate-copy h3, .selected-media h2 { margin: 4px 0; }
+.media-candidate-copy h3 span, .selected-media h2 span { color: var(--muted); font-weight: 400; }
+.media-original-title, .metadata-imdb { color: var(--lime-dark); font-size: 11px; margin: 4px 0; }
+.media-overview { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 10px 0 14px; }
+.media-candidate-meta { color: var(--faint); display: flex; font-family: "DM Mono", monospace; font-size: 9px; gap: 12px; margin: 9px 0; text-transform: uppercase; }
+.metadata-error, .metadata-empty { background: rgba(238, 129, 86, 0.08); border: 1px solid rgba(238, 129, 86, 0.28); border-radius: 9px; color: #ffc4ae; display: flex; flex-direction: column; gap: 5px; padding: 13px 15px; }
+.metadata-empty { background: var(--panel); border-color: var(--line); color: var(--muted); }
+.selected-media-heading { align-items: center; display: flex; gap: 16px; }
+.selected-media-heading img { flex: 0 0 86px; height: 120px; }
+.metadata-season-list { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
+.metadata-season-list h3, .metadata-episodes h3 { font-size: 14px; margin: 0 0 12px; }
+.season-choice-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.metadata-episodes-target { margin-top: 12px; }
+.episode-choice-list { display: grid; gap: 9px; }
+.episode-choice { align-items: start; border-top: 1px solid var(--line); display: flex; gap: 14px; justify-content: space-between; padding-top: 12px; }
+.episode-choice strong, .episode-choice span { display: block; }
+.episode-choice span { color: var(--faint); font-size: 10px; margin-top: 3px; }
+.episode-choice p { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 7px 0 0; max-width: 620px; }
+.resolved-release-form { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
+.resolved-provider-group { border: 0; display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; padding: 0; }
+.resolved-provider-group legend { color: var(--faint); flex-basis: 100%; font-family: "DM Mono", monospace; font-size: 10px; text-transform: uppercase; }
+.resolved-provider-group .provider-check { min-width: 145px; }
+.metadata-detail { display: grid; gap: 14px; }
+.metadata-detail-heading { align-items: center; display: flex; gap: 16px; }
+.metadata-detail-heading img { border-radius: 8px; height: 120px; object-fit: cover; width: 86px; }
+.metadata-seasons { border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; padding-top: 12px; }
+.metadata-seasons div { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.metadata-seasons span { background: var(--panel-soft); border-radius: 6px; padding: 6px 8px; }
 .search-form-full { display: block; }
 .search-main-row { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) 180px 112px; }
 .search-input-large { min-height: 53px; }
@@ -63,6 +104,15 @@
 .filters-panel summary strong { display: block; font-size: 14px; }
 .summary-chevron { color: var(--lime); font-size: 20px; transition: transform 150ms ease; }
 .filters-panel[open] .summary-chevron { transform: rotate(180deg); }
+.filter-preset-row { align-items: center; display: flex; flex-wrap: wrap; gap: 12px 18px; margin-top: 18px; }
+.filter-preset-row .compact-field { min-width: 210px; }
+.filter-preset-row .muted { font-size: 10px; }
+.advanced-options-panel, .advanced-filter-options { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
+.advanced-options-panel summary, .advanced-filter-options summary { align-items: center; cursor: pointer; display: flex; justify-content: space-between; list-style: none; }
+.advanced-options-panel summary::-webkit-details-marker, .advanced-filter-options summary::-webkit-details-marker { display: none; }
+.advanced-options-panel summary strong, .advanced-filter-options summary strong { display: block; font-size: 12px; }
+.advanced-options-panel .section-kicker, .advanced-filter-options .section-kicker { color: var(--lime); margin-bottom: 5px; }
+.advanced-filter-options .filter-grid { margin-bottom: 3px; }
 .filter-grid { display: grid; gap: 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 20px; }
 .filter-group { border: 0; margin: 0; min-width: 0; padding: 0; }
 .filter-group legend { color: var(--muted); font-family: "DM Mono", monospace; font-size: 10px; margin-bottom: 9px; text-transform: uppercase; }
@@ -125,6 +175,7 @@
 .download-feedback-message a { color: var(--lime); }
 .download-feedback-failed { background: rgba(238, 129, 86, 0.08); border-color: rgba(238, 129, 86, 0.28); }
 .download-feedback-failed strong { color: #ffc4ae; }
+.arr-import-note { color: var(--faint); flex-basis: 100%; font-size: 9px; line-height: 1.5; margin: 2px 0 0; max-width: 430px; }
 .status-badge { border: 1px solid var(--line); border-radius: 99px; color: var(--muted); display: inline-block; font-family: "DM Mono", monospace; font-size: 9px; padding: 4px 7px; text-transform: uppercase; }
 .status-queued, .status-downloading { border-color: rgba(213, 247, 104, 0.3); color: var(--lime); }
 .status-failed { border-color: rgba(238, 129, 86, 0.3); color: #ffc4ae; }
@@ -168,6 +219,8 @@
 }
 
 @media (max-width: 650px) {
+  .metadata-search-form { grid-template-columns: 1fr; }
+  .metadata-search-form .search-loading { grid-column: auto; }
   .search-main-row { grid-template-columns: 1fr; }
   .search-main-row .select-wrap, .search-main-row .search-submit { width: 100%; }
   .search-secondary-row { align-items: flex-start; flex-direction: column; gap: 11px; padding: 9px 0; }
@@ -191,6 +244,7 @@
   .result-card-footer { align-items: center; border-top: 1px solid var(--line); color: var(--muted); display: flex; font-size: 10px; gap: 10px; justify-content: space-between; padding-top: 12px; }
   .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .detail-lower-grid { grid-template-columns: 1fr; }
+  .episode-choice { align-items: stretch; flex-direction: column; }
   .history-table-wrap { display: none; }
   .mobile-history { display: grid; gap: 10px; }
   .history-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
