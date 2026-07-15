@@ -3,7 +3,7 @@
   {% if season is defined and season %}<input type="hidden" name="season" value="{{ season.season_number }}">{% endif %}
   {% if selected_episode is defined %}<input type="hidden" name="episode" value="{{ selected_episode }}">{% endif %}
   <fieldset class="resolved-provider-group"><legend>Fontes</legend>
-    {% for provider in providers %}<label class="provider-check"><input type="checkbox" name="providers" value="{{ provider.slug }}" checked><span class="checkmark" aria-hidden="true">✓</span><span><strong>{{ provider.name }}</strong><small>{{ provider.slug }}</small></span></label>{% if provider.slug == "prowlarr" %}<input type="hidden" name="prowlarr_indexers" value="all">{% elif provider.slug == "jackett" %}<input type="hidden" name="jackett_indexers" value="all">{% endif %}{% endfor %}
+    {% for provider in providers if provider.configured %}<label class="provider-check"><input type="checkbox" name="providers" value="{{ provider.slug }}" checked><span class="checkmark" aria-hidden="true">✓</span><span><strong>{{ provider.name }}</strong><small>{{ provider.slug }}</small></span></label>{% if provider.slug == "prowlarr" %}<input type="hidden" name="prowlarr_indexers" value="all">{% elif provider.slug == "jackett" %}<input type="hidden" name="jackett_indexers" value="all">{% endif %}{% endfor %}
   </fieldset>
   <details class="filters-panel" open><summary><span><span class="section-kicker">Filtros principais</span><strong>Ajuste os resultados</strong></span><span class="summary-chevron">⌄</span></summary>
     {% include "partials/filters.html" %}

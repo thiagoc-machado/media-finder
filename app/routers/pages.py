@@ -69,8 +69,16 @@ def build_page_context(
 
     settings = get_settings()
     provider_registry = request.app.state.provider_registry
-    providers = [{"slug": provider.slug, "name": provider.name} for provider in provider_registry.enabled_providers()]
-    state = form_state or _default_form_state([provider["slug"] for provider in providers])
+    providers = [
+        {
+            "slug": provider.slug,
+            "name": provider.name,
+            "configured": getattr(provider, "is_configured", True),
+        }
+        for provider in provider_registry.enabled_providers()
+        if provider.slug != "duckduckgo"
+    ]
+    state = form_state or _default_form_state([provider["slug"] for provider in providers if provider["configured"]])
     recent_history = _recent_history(db, limit=5) if db is not None else []
     context = {
         "app_name": settings.app_name,

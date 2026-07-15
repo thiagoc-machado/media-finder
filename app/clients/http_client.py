@@ -33,9 +33,11 @@ class ProviderHTTPClient:
         headers: Mapping[str, str] | None = None,
         client: httpx.AsyncClient | None = None,
         max_response_bytes: int = MAX_PROVIDER_RESPONSE_BYTES,
+        allow_nested_url_path: bool = False,
     ) -> None:
         self.base_url = base_url
         self._max_response_bytes = max_response_bytes
+        self._allow_nested_url_path = allow_nested_url_path
         self._owns_client = client is None
         self._client = client or httpx.AsyncClient(
             base_url=base_url,
@@ -84,10 +86,17 @@ class ProviderHTTPClient:
         *,
         params: Mapping[str, Any] | None = None,
         headers: Mapping[str, str] | None = None,
+        follow_redirects: bool = False,
     ) -> httpx.Response:
         """Return a bounded response, including redirects for a caller to inspect."""
 
-        return await self._get(path, params=params, headers=headers, reject_redirect=False)
+        return await self._get(
+            path,
+            params=params,
+            headers=headers,
+            reject_redirect=not follow_redirects,
+            follow_redirects=follow_redirects,
+        )
 
     async def close(self) -> None:
         """Close only clients owned by this transport."""
@@ -102,12 +111,20 @@ class ProviderHTTPClient:
         params: Mapping[str, Any] | None,
         headers: Mapping[str, str] | None,
         reject_redirect: bool = True,
+        follow_redirects: bool = False,
     ) -> httpx.Response:
-        if not path.startswith("/") or "//" in path[1:] or any(ord(char) < 32 for char in path):
+        if not path.startswith("/") or (
+            not self._allow_nested_url_path and "//" in path[1:]
+        ) or any(ord(char) < 32 for char in path):
             raise ProviderConnectionError("Provider request path is invalid")
         request_headers = {"User-Agent": _USER_AGENT, "X-Request-ID": uuid.uuid4().hex, **(headers or {})}
         try:
-            response = await self._client.get(path, params=params, headers=request_headers)
+            response = await self._client.get(
+                path,
+                params=params,
+                headers=request_headers,
+                follow_redirects=follow_redirects,
+            )
         except httpx.TimeoutException as exc:
             raise ProviderTimeoutError("Provider request timed out") from exc
         except httpx.RequestError as exc:

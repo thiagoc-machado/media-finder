@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import io
 import re
 import time
 from collections.abc import Callable, Iterable, Mapping
@@ -193,6 +194,44 @@ class QBitTorrentService:
         else:
             message = "Torrent was not confirmed in qBittorrent"
         return AddTorrentResult(status="failed", info_hash=info_hash, category=category, message=message)
+
+    async def add_torrent_file(
+        self,
+        torrent_content: bytes,
+        filename: str,
+        media_type: str,
+        provider: str,
+        quality: str | None = None,
+        languages: list[str] | None = None,
+        paused: bool = False,
+    ) -> str:
+        """Send one validated .torrent file to qBittorrent."""
+
+        if media_type not in _SUPPORTED_MEDIA_TYPES:
+            raise UnsupportedMediaTypeError("Unsupported media type")
+        category = self.get_category_for_media_type(media_type)
+        if not category:
+            raise CategoryNotConfiguredError("No qBittorrent category is configured for this media type")
+        categories = await self.list_categories()
+        if category.casefold() not in {name.casefold() for name in categories}:
+            raise CategoryNotFoundError("Configured qBittorrent category was not found")
+        if not torrent_content.startswith(b"d"):
+            raise InvalidMagnetError("Invalid torrent file")
+        stream = io.BytesIO(torrent_content)
+        stream.name = filename
+        tags = build_qbittorrent_tags(provider, media_type, quality, languages)
+        response = await self._execute(
+            lambda client: client.torrents_add(
+                torrent_files=stream,
+                category=category,
+                tags=tags,
+                is_paused=paused,
+            ),
+            self.settings.qbittorrent_operation_timeout_seconds,
+        )
+        if _add_response_failed(response):
+            raise QBitTorrentUnavailableError("qBittorrent rejected the torrent file")
+        return "Added .torrent file to qBittorrent"
 
     async def get_torrent(self, info_hash: str) -> TorrentStatus | None:
         """Read one torrent by its locally stored hash."""

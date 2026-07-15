@@ -1,19 +1,37 @@
 {% set download_media_type = view.result.media_type %}
 {% set download_category = download_categories.get(download_media_type) if download_categories is defined else none %}
 <div class="download-control" data-download-control
+     {% if view.result.raw_data.get('media_kind') in ['pdf', 'torrent'] %}data-external-download{% endif %}
      data-media-type="{{ download_media_type or '' }}"
      data-category="{{ download_category or '' }}"
      data-download-capability="{{ view.result.download_capability }}"
      data-has-valid-magnet="{{ 'true' if (view.result.magnet_url or view.result.info_hash) else 'false' }}">
+  {% if view.result.raw_data.get('media_kind') == 'pdf' %}
+  <form class="book-download-form" hx-post="/downloads/books" hx-target="#download-feedback-{{ view.result_token }}" hx-swap="innerHTML">
+    <input type="hidden" name="result_token" value="{{ view.result_token }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="button button-small download-button" type="submit">Salvar PDF</button>
+  </form>
+  {% elif view.result.raw_data.get('media_kind') == 'torrent' %}
+  <form class="torrent-download-form" hx-post="/downloads/torrent" hx-target="#download-feedback-{{ view.result_token }}" hx-swap="innerHTML">
+    <input type="hidden" name="result_token" value="{{ view.result_token }}">
+    <input type="hidden" name="paused" value="false">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="button button-small download-button" type="submit">Enviar ao qBittorrent</button>
+  </form>
+  {% elif view.result.raw_data.get('search_mode') == 'public_web' %}
+  <span class="download-reason">Arquivo público</span>
+  {% else %}
   <form class="download-form" hx-post="/downloads" hx-target="#download-feedback-{{ view.result_token }}" hx-swap="innerHTML">
     <input type="hidden" name="result_token" value="{{ view.result_token }}">
     <input type="hidden" name="paused" value="false">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button class="button button-small download-button" type="submit" data-download-button disabled>Download</button>
   </form>
+  {% endif %}
   {% if view.result.magnet_url or view.result.info_hash %}<a class="button button-small magnet-button" href="{{ url_for('search_result_magnet', result_token=view.result_token) }}" target="_blank" rel="noopener">Abrir magnet</a>{% endif %}
   {% if view.result.download_capability == 'external' and view.result.source_url %}<a class="button button-small magnet-button" href="{{ view.result.source_url }}" target="_blank" rel="noopener">Abrir fonte</a>{% endif %}
-  <span class="download-reason" data-download-reason>Checking qBittorrent…</span>
+  <span class="download-reason{% if view.result.raw_data.get('media_kind') in ['pdf', 'torrent'] %} is-hidden{% endif %}" data-download-reason>{% if view.result.raw_data.get('media_kind') == 'pdf' %}Salva em /books{% elif view.result.raw_data.get('media_kind') == 'torrent' %}Envia para o qBittorrent{% else %}Checking qBittorrent…{% endif %}</span>
   <div id="download-feedback-{{ view.result_token }}" class="download-feedback" aria-live="polite"></div>
   {% if download_media_type in ['movie', 'series'] %}
     <p class="arr-import-note">Radarr/Sonarr will only import this download automatically if the media is already monitored.</p>

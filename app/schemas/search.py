@@ -18,6 +18,7 @@ class SearchRequest(BaseModel):
     episode: int | None = None
     indexers: list[str] = Field(default_factory=list)
     provider_indexers: dict[str, list[str]] = Field(default_factory=dict)
+    file_type: Literal["all", "torrent", "pdf", "music", "video", "zip"] = "all"
 
 
 class SearchResult(BaseModel):

@@ -136,6 +136,22 @@ async def test_duplicate_ambiguous_and_missing_categories(monkeypatch):
         await unconfigured.add_torrent(f"magnet:?xt=urn:btih:{HASH}", "anime", "mock")
 
 
+async def test_add_torrent_file_uploads_content_without_magnet(monkeypatch):
+    async def immediate(function):
+        return function()
+
+    monkeypatch.setattr(asyncio, "to_thread", immediate)
+    client = FakeClient()
+    service = QBitTorrentService(settings(), client_factory=lambda **kwargs: client)
+
+    message = await service.add_torrent_file(b"d4:infod4:name4:testee", "Narnia.torrent", "movie", "duckduckgo")
+
+    assert message == "Added .torrent file to qBittorrent"
+    assert client.add_calls[0]["category"] == "movies"
+    assert client.add_calls[0]["torrent_files"].name == "Narnia.torrent"
+    assert client.add_calls[0]["torrent_files"].read() == b"d4:infod4:name4:testee"
+
+
 async def test_authentication_failure_and_operation_timeout(monkeypatch):
     class BadClient(FakeClient):
         def auth_log_in(self):

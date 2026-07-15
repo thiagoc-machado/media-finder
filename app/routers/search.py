@@ -360,6 +360,9 @@ async def _execute_search(
 def _validate_providers(params: SearchQueryParams, registry: ProviderRegistry, max_providers: int) -> None:
     """Reject unknown or excessive provider selections before execution."""
 
+    if "duckduckgo" in params.providers:
+        raise ValueError("DuckDuckGo é exclusivo da busca de arquivos em /files.")
+
     if len(params.providers) > max_providers:
         raise ValueError(f"Selecione no máximo {max_providers} providers.")
     registered = {registration.provider.slug for registration in registry.registrations()}

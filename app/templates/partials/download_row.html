@@ -7,5 +7,5 @@
   <td>{{ download.category }}</td>
   <td><div id="download-status-{{ download.id }}">{% include "partials/download_status.html" %}</div></td>
   <td>{{ download.created_at[:16].replace('T', ' ') if download.created_at else '—' }}</td>
-  <td><a class="button button-small button-secondary" href="{{ url_for('download_status', download_id=download.id) }}" hx-get="{{ url_for('download_status', download_id=download.id) }}" hx-target="#download-status-{{ download.id }}" hx-swap="innerHTML">Refresh status</a></td>
+  <td>{% if download.info_hash %}<a class="button button-small button-secondary" href="{{ url_for('download_status', download_id=download.id) }}" hx-get="{{ url_for('download_status', download_id=download.id) }}" hx-target="#download-status-{{ download.id }}" hx-swap="innerHTML">Refresh status</a>{% elif download.category == 'books' %}<span class="muted">Arquivo local</span>{% else %}<span class="muted">Enviado</span>{% endif %}</td>
 </tr>

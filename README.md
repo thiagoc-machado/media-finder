@@ -15,7 +15,7 @@ Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário,
 - Exemplo de serviço para Docker Compose.
 - Contrato assíncrono `SearchProvider`, schemas normalizados e registry explícito.
 - Provider mock determinístico disponível somente nas fixtures de teste; o runtime oferece exclusivamente providers reais configurados.
-- Provider opcional Google Drive em modo somente leitura, limitado a uma pasta explicitamente configurada pelo usuário.
+- Provider opcional DuckDuckGo em modo somente leitura para testes acadêmicos de pesquisa pública `site:drive.google.com`; somente PDFs e `.torrent` são aceitos. PDFs podem ser salvos em `/books` e torrents são enviados ao qBittorrent.
 - `SearchService` com execução concorrente, timeout por provider e erros parciais estruturados.
 - Endpoint JSON `GET /providers/health` para providers habilitados.
 - Contratos `SearchFilters`, `SearchSort`, `ScoringPreferences` e `ProcessedSearchResult`.
@@ -25,6 +25,7 @@ Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário,
 - Pipeline assíncrono `process_search_results` com métricas por etapa e preservação de erros dos providers.
 - Interface completa de busca com Jinja2, HTMX local, filtros, ordenação, loading, estados vazios e layout desktop/mobile.
 - Rotas `/search`, `/search/history` e `/search/result/{result_token}`.
+- Rota `/files` separada para localizar PDFs e `.torrent` públicos sem misturar a busca de mídia.
 - Histórico SQLite com paginação e somente metadados não sensíveis.
 - Tokens aleatórios temporários em memória, TTL, limite de armazenamento e rate limit por IP.
 - Integração real com qBittorrent usando `qbittorrent-api`, autenticação reutilizável, timeouts e chamadas fora do event loop.
@@ -40,6 +41,23 @@ Base de um painel web para pesquisar mídia em fontes autorizadas pelo usuário,
 - Testes e configuração do Ruff.
 
 Radarr e Sonarr não possuem clientes ou cadastro automático: reconhecem downloads somente pelas categorias `movies` e `series` quando a mídia correspondente já está monitorada. Cinemeta, Debrid, streaming HTTP, scraping HTML e novos containers continuam fora do escopo.
+
+### Pesquisa acadêmica na web
+
+Para os testes acadêmicos solicitados, o provider usa diretamente a página HTML pública do DuckDuckGo, acrescentando `site:drive.google.com`. O filtro de segurança é aplicado localmente: somente resultados cujo título termina em `.pdf` ou `.torrent` entram no sistema. Não usa API, chave, OAuth ou acesso à API do Drive. PDFs podem ser salvos localmente em `/books` e torrents são enviados ao qBittorrent. O provider não contorna login/CAPTCHA. A extensão do arquivo não prova autorização autoral; a responsabilidade de usar apenas conteúdo autorizado continua sendo do usuário.
+
+```dotenv
+DUCKDUCKGO_SEARCH_ENABLED=true
+DUCKDUCKGO_SEARCH_TIMEOUT_SECONDS=10
+DUCKDUCKGO_SEARCH_MAX_RESULTS=10
+```
+
+Para habilitar o armazenamento de PDFs públicos, o Compose monta `/mnt/storage/Livros` do host em `/books` no container. Arquivos `.torrent` públicos são baixados temporariamente e enviados ao qBittorrent. Garanta que a pasta exista e seja gravável pelo `PUID`/`PGID` configurado:
+
+```bash
+sudo mkdir -p /mnt/storage/Livros
+sudo chown 1000:1000 /mnt/storage/Livros
+```
 
 ## Arquitetura do MVP (Fases 1 a 9)
 

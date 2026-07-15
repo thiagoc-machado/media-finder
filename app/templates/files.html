@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Buscar arquivos · {{ app_name }}{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <p class="eyebrow"><span class="eyebrow-line"></span>Arquivo público</p>
+    <h1>Buscar arquivos</h1>
+    <p>Pesquisa separada para localizar PDFs e arquivos .torrent públicos. Não participa da busca de filmes e séries.</p>
+  </section>
+
+  <section class="search-panel search-panel-functional" aria-labelledby="file-search-heading">
+    <div class="panel-heading">
+      <div><p class="section-kicker">DuckDuckGo</p><h2 id="file-search-heading">Localizar um arquivo</h2></div>
+      <span class="phase-chip">PÚBLICO · SEM API</span>
+    </div>
+    <form class="file-search-form" action="{{ url_for('file_search') }}" method="get" data-file-search-form>
+      <label class="sr-only" for="file-query">O que pesquisar</label>
+      <input id="file-query" name="q" value="{{ file_query }}" placeholder="Ex.: narnia" minlength="2" required>
+      <label class="file-type-select">Tipo de arquivo
+        <select name="file_type">
+          {% for value, label in [('all', 'Todos os tipos'), ('torrent', 'Torrents'), ('pdf', 'PDF'), ('music', 'Música'), ('video', 'Vídeo'), ('zip', 'ZIP / arquivos')] %}
+            <option value="{{ value }}"{% if file_type == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="file-limit-select">Por página
+        <select name="limit">
+          {% for value in [10, 25, 50, 100] %}<option value="{{ value }}"{% if file_limit == value %} selected{% endif %}>{{ value }}</option>{% endfor %}
+        </select>
+      </label>
+      <button class="button button-primary file-search-button" type="submit" data-file-search-submit>
+        <span data-file-search-label>Buscar arquivos</span><span class="file-search-arrow" aria-hidden="true">→</span>
+        <span class="file-search-spinner" aria-hidden="true"><span class="spinner"></span></span>
+      </button>
+    </form>
+  </section>
+
+  {% if file_error %}<div class="form-error" role="alert">{{ file_error }}</div>{% endif %}
+
+  {% if file_query and not file_error %}
+    <section class="results-shell" aria-live="polite">
+      <header class="results-header"><div><p class="section-kicker">Resultados de arquivos</p><h2>{{ file_total }} encontrados</h2></div><span class="muted">{{ file_type|upper }} · Busca pública</span></header>
+      {% if file_results %}
+        <div class="file-results-grid">
+          {% for view in file_results %}
+            <article class="file-result-card">
+              <div><p class="card-label">{{ view.result.raw_data.get('media_kind', 'arquivo')|upper }}</p><h3>{{ view.result.title }}</h3><p class="muted">{{ view.result.source_url }}</p></div>
+              {% include "partials/download_action.html" %}
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}<div class="empty-state"><h2>Nenhum arquivo encontrado</h2><p>Tente outro título ou altere o tipo de arquivo.</p></div>{% endif %}
+      {% if file_total > file_limit %}
+        <nav class="file-pagination" aria-label="Paginação dos arquivos">
+          {% if file_page > 1 %}<a class="button button-secondary button-small" href="{{ url_for('file_search') }}?q={{ file_query|urlencode }}&file_type={{ file_type }}&limit={{ file_limit }}&page={{ file_page - 1 }}">← Anterior</a>{% endif %}
+          <span>Página {{ file_page }} · {{ file_total }} arquivos</span>
+          {% if file_has_next %}<a class="button button-secondary button-small" href="{{ url_for('file_search') }}?q={{ file_query|urlencode }}&file_type={{ file_type }}&limit={{ file_limit }}&page={{ file_page + 1 }}">Próxima →</a>{% endif %}
+        </nav>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}

@@ -23,6 +23,29 @@
     link.classList.toggle("is-active", active);
   });
 
+  var fileSearchLink = query("[data-file-search-link]");
+  var mediaSearchInput = query("input[name='query']");
+  function updateFileSearchLink() {
+    if (!fileSearchLink || !mediaSearchInput) return;
+    var queryValue = mediaSearchInput.value.trim();
+    fileSearchLink.href = queryValue ? "/files?q=" + encodeURIComponent(queryValue) : "/files";
+  }
+  if (fileSearchLink && mediaSearchInput) {
+    mediaSearchInput.addEventListener("input", updateFileSearchLink);
+    updateFileSearchLink();
+  }
+
+  document.querySelectorAll("[data-file-search-form]").forEach(function (form) {
+    form.addEventListener("submit", function () {
+      if (form.classList.contains("is-loading")) return;
+      form.classList.add("is-loading");
+      var submit = form.querySelector("[data-file-search-submit]");
+      var label = form.querySelector("[data-file-search-label]");
+      if (submit) submit.disabled = true;
+      if (label) label.textContent = "Buscando arquivos…";
+    });
+  });
+
   var modal = query("#app-modal");
   var modalContent = query("#app-modal-content");
   var lastFocused = null;
@@ -353,7 +376,8 @@
   }
 
   function refreshDownloadCapabilities() {
-    var controls = Array.prototype.slice.call(document.querySelectorAll("[data-download-control]"));
+    var controls = Array.prototype.slice.call(document.querySelectorAll("[data-download-control]"))
+      .filter(function (control) { return !control.hasAttribute("data-external-download"); });
     if (!controls.length) return;
     Promise.all([
       fetch("/qbittorrent/health", { headers: { "Accept": "application/json" } }).then(function (response) { return response.json(); }),

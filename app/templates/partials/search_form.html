@@ -19,8 +19,11 @@
       </select>
     </label>
     <button class="button button-primary search-submit" type="submit" data-search-submit>
-      Buscar <span aria-hidden="true">→</span>
+      Buscar mídia <span aria-hidden="true">→</span>
     </button>
+    <a class="button button-secondary file-search-submit" href="/files" data-file-search-link>
+      Buscar arquivos <span aria-hidden="true">↗</span>
+    </a>
   </div>
 
   <div class="search-secondary-row">
@@ -45,9 +48,9 @@
     <div class="provider-check-grid">
       {% for provider in providers %}
         <label class="provider-check">
-          <input type="checkbox" name="providers" value="{{ provider.slug }}"{% if provider.slug in form_state.providers %} checked{% endif %}>
+          <input type="checkbox" name="providers" value="{{ provider.slug }}"{% if provider.slug in form_state.providers %} checked{% endif %}{% if not provider.configured %} disabled{% endif %}>
           <span class="checkmark" aria-hidden="true">✓</span>
-          <span><strong>{{ provider.name }}</strong><small>{{ provider.slug }}</small></span>
+          <span><strong>{{ provider.name }}</strong><small>{{ provider.slug }}{% if not provider.configured %} · configuração pendente{% endif %}</small></span>
         </label>
       {% else %}
         <p class="muted">Nenhum provider habilitado.</p>

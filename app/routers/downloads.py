@@ -10,6 +10,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.dependencies import database_session
 from app.exceptions import (
     CategoryNotConfiguredError,
@@ -23,11 +24,99 @@ from app.models.download_history import DownloadHistory
 from app.routers.pages import build_page_context
 from app.schemas.download import DownloadView
 from app.security import validate_csrf_token
+from app.services.book_download_service import BookDownloadError, BookDownloadService
 from app.services.qbittorrent_service import QBitTorrentService
 from app.utils.magnet import build_magnet, normalize_magnet, parse_magnet
 from app.web_templates import templates
 
 router = APIRouter(prefix="/downloads", tags=["downloads"])
+
+
+@router.post("/books", name="save_book")
+async def save_book(
+    request: Request,
+    result_token: str = Form(...),
+    csrf_token: str | None = Form(None),
+    db: Session = Depends(database_session),
+):
+    """Save one public PDF result in the mounted books directory."""
+
+    if not validate_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=403, detail="CSRF token inválido.")
+    result = await request.app.state.result_store.get(result_token)
+    if result is None:
+        return _feedback(request, "failed", "Resultado expirado", http_status=410)
+    if result.provider != "duckduckgo" or result.raw_data.get("media_kind") != "pdf" or not result.source_url:
+        return _feedback(request, "failed", "Somente resultados PDF públicos podem ser salvos", http_status=400)
+    try:
+        filename = await BookDownloadService().save_pdf(result.source_url, result.title)
+    except BookDownloadError as exc:
+        return _feedback(request, "failed", str(exc), category="books")
+    row = DownloadHistory(
+        title=result.title,
+        provider=result.provider,
+        media_type="other",
+        category="books",
+        status="completed",
+        size_bytes=result.size_bytes,
+    )
+    db.add(row)
+    _commit(db)
+    return _feedback(request, "completed", f"PDF salvo em /books/{filename}", category="books", download_id=row.id)
+
+
+@router.post("/torrent", name="send_torrent_file")
+async def send_torrent_file(
+    request: Request,
+    result_token: str = Form(...),
+    paused: bool = Form(False),
+    csrf_token: str | None = Form(None),
+    db: Session = Depends(database_session),
+):
+    """Fetch one public .torrent file and upload it to qBittorrent."""
+
+    if not validate_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=403, detail="CSRF token inválido.")
+    result = await request.app.state.result_store.get(result_token)
+    if result is None:
+        return _feedback(request, "failed", "Resultado expirado", http_status=410)
+    if result.provider != "duckduckgo" or result.raw_data.get("media_kind") != "torrent" or not result.source_url:
+        return _feedback(request, "failed", "Somente resultados .torrent públicos podem ser enviados", http_status=400)
+
+    media_type = result.media_type or "other"
+    service: QBitTorrentService = request.app.state.qbittorrent_service
+    category = service.get_category_for_media_type(media_type) or "unconfigured"
+    try:
+        content = await BookDownloadService().fetch_torrent(
+            result.source_url,
+            max_bytes=get_settings().torrent_file_max_size_bytes,
+        )
+        message = await service.add_torrent_file(
+            content,
+            result.title if result.title.casefold().endswith(".torrent") else f"{result.title}.torrent",
+            media_type,
+            result.provider,
+            quality=result.quality,
+            languages=result.languages,
+            paused=paused,
+        )
+    except BookDownloadError as exc:
+        return _feedback(request, "failed", str(exc), category=category)
+    except (CategoryNotConfiguredError, CategoryNotFoundError) as exc:
+        return _feedback(request, "failed", _safe_exception_message(exc), category=category)
+    except (QBitTorrentAuthenticationError, QBitTorrentTimeoutError, QBitTorrentUnavailableError) as exc:
+        return _feedback(request, "failed", _safe_exception_message(exc), category=category)
+    row = DownloadHistory(
+        title=result.title,
+        provider=result.provider,
+        media_type=media_type,
+        category=category,
+        status="queued",
+        size_bytes=result.size_bytes,
+    )
+    db.add(row)
+    _commit(db)
+    return _feedback(request, "queued", message, category=category, download_id=row.id)
 
 
 @router.post("", name="create_download")
