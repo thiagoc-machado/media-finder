@@ -205,6 +205,10 @@ body.modal-open { overflow: hidden; }
 .score-details ul { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; bottom: 20px; color: var(--muted); font-size: 10px; left: -80px; min-width: 180px; padding: 8px 8px 8px 23px; position: absolute; z-index: 4; }
 .result-actions { white-space: normal; }
 .button-small { font-size: 10px; min-height: 29px; padding: 6px 9px; }
+.download-button { gap: 7px; min-width: 130px; }
+.download-spinner { display: none; }
+.htmx-request .download-button { cursor: wait; opacity: .72; }
+.htmx-request .download-spinner { display: inline-flex; }
 .button-disabled { cursor: not-allowed; opacity: 0.45; }
 .download-control { align-items: center; display: inline-flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .capability-badge { color: var(--faint); font-family: "DM Mono", monospace; font-size: 8px; letter-spacing: .04em; text-transform: uppercase; }

@@ -10,14 +10,14 @@
   <form class="book-download-form" hx-post="/downloads/books" hx-target="#download-feedback-{{ view.result_token }}" hx-swap="innerHTML">
     <input type="hidden" name="result_token" value="{{ view.result_token }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <button class="button button-small download-button" type="submit">Salvar PDF</button>
+    <button class="button button-small download-button" type="submit" data-download-submit><span data-download-label>Salvar PDF</span><span class="download-spinner" aria-hidden="true"><span class="spinner"></span></span></button>
   </form>
   {% elif view.result.raw_data.get('media_kind') == 'torrent' %}
   <form class="torrent-download-form" hx-post="/downloads/torrent" hx-target="#download-feedback-{{ view.result_token }}" hx-swap="innerHTML">
     <input type="hidden" name="result_token" value="{{ view.result_token }}">
     <input type="hidden" name="paused" value="false">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <button class="button button-small download-button" type="submit">Enviar ao qBittorrent</button>
+    <button class="button button-small download-button" type="submit" data-download-submit><span data-download-label>Enviar ao qBittorrent</span><span class="download-spinner" aria-hidden="true"><span class="spinner"></span></span></button>
   </form>
   {% elif view.result.raw_data.get('search_mode') == 'public_web' %}
   <span class="download-reason">Arquivo público</span>
@@ -26,7 +26,7 @@
     <input type="hidden" name="result_token" value="{{ view.result_token }}">
     <input type="hidden" name="paused" value="false">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <button class="button button-small download-button" type="submit" data-download-button disabled>Download</button>
+    <button class="button button-small download-button" type="submit" data-download-button data-download-submit disabled><span data-download-label>Download</span><span class="download-spinner" aria-hidden="true"><span class="spinner"></span></span></button>
   </form>
   {% endif %}
   {% if view.result.magnet_url or view.result.info_hash %}<a class="button button-small magnet-button" href="{{ url_for('search_result_magnet', result_token=view.result_token) }}" target="_blank" rel="noopener">Abrir magnet</a>{% endif %}

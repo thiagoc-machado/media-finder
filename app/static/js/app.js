@@ -361,6 +361,29 @@
     if (error) { error.textContent = "A busca não pôde ser concluída. Verifique os filtros."; error.classList.remove("is-hidden"); }
   });
 
+  function downloadForm(element) {
+    return element && element.matches && element.matches(".book-download-form, .torrent-download-form, .download-form") ? element : null;
+  }
+
+  document.body.addEventListener("htmx:beforeRequest", function (event) {
+    var form = downloadForm(event.detail && event.detail.elt);
+    if (!form) return;
+    var button = form.querySelector("[data-download-submit]");
+    var label = form.querySelector("[data-download-label]");
+    if (button) button.disabled = true;
+    if (label) label.textContent = form.matches(".torrent-download-form") ? "Enviando…" : "Processando…";
+  });
+
+  document.body.addEventListener("htmx:afterRequest", function (event) {
+    var form = downloadForm(event.detail && event.detail.elt);
+    if (!form) return;
+    var button = form.querySelector("[data-download-submit]");
+    var label = form.querySelector("[data-download-label]");
+    var successful = event.detail && event.detail.successful;
+    if (label) label.textContent = successful ? (form.matches(".torrent-download-form") ? "Enviado ✓" : "Concluído ✓") : "Tentar novamente";
+    if (button) button.disabled = successful;
+  });
+
   function setDownloadReason(control, message, enabled) {
     var button = control.querySelector("[data-download-button]");
     var reason = control.querySelector("[data-download-reason]");

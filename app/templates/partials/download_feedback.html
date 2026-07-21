@@ -1,8 +1,8 @@
 <div class="download-feedback-message download-feedback-{{ download_status }}" role="status">
-  {% if download_status == 'queued' %}<strong>Added to qBittorrent</strong>
-  {% elif download_status == 'duplicate' %}<strong>Already exists</strong>
+  {% if download_status == 'queued' %}<strong>Enviado ao qBittorrent</strong>
+  {% elif download_status == 'duplicate' %}<strong>Este download já existe</strong>
   {% else %}<strong>{{ download_message }}</strong>{% endif %}
-  {% if download_category and download_category != 'unconfigured' %}<span>Category: {{ download_category }}</span>{% endif %}
+  {% if download_category and download_category != 'unconfigured' %}<span>Categoria: {{ download_category }}</span>{% endif %}
   {% if download_info_hash %}<span>Hash: {{ download_info_hash|short_hash }}</span>{% endif %}
-  {% if download_id %}<a href="{{ url_for('downloads') }}">View downloads</a>{% endif %}
+  {% if download_id %}<a href="{{ url_for('downloads') }}">Ver downloads</a>{% endif %}
 </div>
